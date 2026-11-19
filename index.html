@@ -173,7 +173,7 @@
   .start b { display: block; font-size: 22px; letter-spacing: .4em; color: var(--aqua); }
   .start small { color: var(--dim); letter-spacing: .14em; }
   .autoroll { flex-basis: 100%; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 7px; margin-top: 1px; }
-  .autoroll small { color: var(--dim); font-size: 8.5px; letter-spacing: .16em; }
+  .autoroll small, .seqrow small { color: var(--dim); font-size: 8.5px; letter-spacing: .16em; }
   .autobtn { background: #141517; border: 1px solid var(--line-2); color: var(--text); border-radius: 6px; height: 26px; padding: 0 12px; font: inherit; font-size: 10px; letter-spacing: .14em; cursor: pointer; white-space: nowrap; }
   .autobtn.on { background: var(--amber); border-color: var(--amber); color: #1a1205; font-weight: 700; }
   .segs.mini { display: grid; gap: 3px; }
@@ -188,6 +188,23 @@
   .stepbox.on { background: #3a2c12; border-color: var(--amber); }
   .stepbox.here { box-shadow: 0 0 0 2px var(--aqua) inset; }
   .stepbox.on.here { background: var(--amber); }
+  /* STEP SEQUENCER */
+  .seqrow { flex-basis: 100%; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 7px; }
+  .seqrow .autobtn.on { background: var(--aqua); border-color: var(--aqua); color: #04161a; }
+  .seqside { display: flex; flex-direction: column; gap: 4px; }
+  .seqbrush { display: grid; grid-template-columns: repeat(4, max-content); gap: 3px; }
+  .seqbrush button { padding: 3px 6px; font-size: 9px; }
+  .seqtools { display: flex; gap: 4px; }
+  .seqtools button { height: 20px; padding: 0 8px; font-size: 9px; }
+  .seqgrid { flex: 1; display: grid; gap: 3px; min-width: 160px; }
+  .seqcell { position: relative; height: 42px; border-radius: 4px; border: 1px solid var(--line-2); background: #121316; cursor: ns-resize; padding: 0; overflow: hidden; touch-action: none; }
+  .seqcell.beat { border-color: #3a414b; }
+  .seqcell i { position: absolute; left: 0; right: 0; bottom: 0; background: #12343a; display: none; }
+  .seqcell.on { border-color: var(--aqua-d); }
+  .seqcell.on i { display: block; background: linear-gradient(to top, var(--aqua-d), var(--aqua)); opacity: .85; }
+  .seqcell b { position: absolute; left: 0; right: 0; top: 2px; font: 600 7.5px var(--mono); color: #e9fbfe; letter-spacing: 0; text-align: center; pointer-events: none; text-shadow: 0 0 3px #000; }
+  .seqcell.here { box-shadow: 0 0 0 2px var(--amber) inset; }
+  .seqrow.off .seqcell.on i { opacity: .35; }
   .rollmini { position: absolute; right: 12px; bottom: 10px; z-index: 3; pointer-events: none; font: 600 11px var(--mono); color: var(--amber); background: rgba(5,12,16,.8); border: 1px solid #4a3a1a; border-radius: 6px; padding: 4px 8px; opacity: 0; transition: opacity .4s; }
   .rollmini b { color: #e9fbfe; letter-spacing: .1em; margin-right: 4px; }
   .rollmini.pop { opacity: 1; transition: none; }
@@ -588,7 +605,7 @@ const DEFAULTS = {
   pattern: 'even', rate: 4, bpm: 120, density: 0.5, sense: 0,
   cutoff: 900, res: 0.8, ping: 0.6, sweep: 2.2, fall: 0.08, bubble: 0.55, wobble: 0.3,
   chirp: 0, width: 0.4, size: 0.5, edge: 0, key: 1,
-  mix: 0.5, chop: 0, drive: 1,
+  mix: 0.5, chop: 0, drive: 1, follow: 1,
   fType: 'off', fCut: 2400, fRes: 0.25, fDrive: 0, fEnv: 0, fA: 0.005, fD: 0.25, fRate: 0.15, fDepth: 0,
   level: 0.8,
   wave: 'saw', oscLevel: 0, hold: 0, octave: 0,          // EXCITER tone layer (LEVEL 0 = the input only)
@@ -610,17 +627,19 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     this.p = Object.assign({}, DEFAULTS);
     this.drops = Array.from({ length: DROPS }, makeDrop);
     this.clock = 0; this.step = 0; this.pending = [];
-    this.fast = 0; this.slow = 0; this.refractory = 0;
+    this.fast = 0; this.slow = 0; this.refractory = 0; this.lvl = 0;
     this.gate = 0; this.held = []; this.lfoPh = 0; this.lastNote = 60;
     this.fst = new Float64Array(8); this.fenv = 0; this.fstage = 0; this.fg = 0.1;
     this.events = []; this.peak = 0; this.cutFlash = 0;
     this.reportEvery = Math.round(sampleRate / 60); this.reportCount = 0;
+    this.seq = null;   // STEP SEQUENCER: { on, steps: [{ on, pat ('' = the PATTERN dial), acc 0–1 }] × 32 }
     this.port.onmessage = (e) => this.onMessage(e.data);
   }
 
   onMessage(m) {
     if (!m) return;
     if (m.type === 'params') Object.assign(this.p, m.params);
+    else if (m.type === 'seq') this.seq = m.seq;
     else if (m.type === 'sync') { this.clock = 0; this.step = 0; this.pending.length = 0; }   // loop restarted: realign the grid
     else if (m.type === 'on') { this.held = this.held.filter((n) => n !== m.note); this.held.push(m.note); this.spawn(0.95, 'note', m.note); }
     else if (m.type === 'off') this.held = this.held.filter((n) => n !== m.note);
@@ -628,7 +647,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
   }
 
   // a new drip; its pitch follows the held key (if any) else the PITCH dial
-  spawn(size, kind, note) {
+  spawn(size, kind, note, c3) {   // c3: this drip is a 3D one (a sequencer step set to 3D)
     const p = this.p, sr = sampleRate;
     let d = this.drops.find((x) => !x.active);
     if (!d) d = this.drops.reduce((a, b) => (a.env < b.env ? a : b));
@@ -638,7 +657,8 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     Object.assign(d, { active: true, age: 0, size, jit: Math.random() * 2 - 1, ratio: Math.random() * 0.7 - 0.22,
       amp: Math.random() * 2 - 1, rate: 0.25 + Math.random() * 0.9, ic1: 0, ic2: 0, ic1b: 0, ic2b: 0, dGuard: 1, dgLvl: 0, env: 0 });
     d.fc = clamp(p.cutoff * Math.pow(2, (n - 60) / 12 * clamp(p.key, 0, 1)), 30, sr * 0.45);
-    let width = clamp(p.width, 0, 1); if (p.pattern === '3d' && width < 0.8) width = 0.8;
+    let width = clamp(p.width, 0, 1); if ((p.pattern === '3d' || c3) && width < 0.8) width = 0.8;
+    d.c3 = c3 ? 1 : 0;
     const angle = (clamp(d.jit * width, -1, 1) + 1) * 0.25 * Math.PI; d.gl = Math.cos(angle); d.gr = Math.sin(angle);
     d.len = clamp(p.fall, 0.02, 0.45) * sr * (1.5 + size * 4);
     // tone layer: this drip's own oscillator, at the drip's note
@@ -654,7 +674,29 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
   // one grid step: the pattern decides what falls
   onStep(k, spb) {
     const p = this.p, dens = clamp(p.density, 0, 1), rate = Math.max(1, p.rate | 0), onBeat = k % rate === 0, r = Math.random;
+    // FOLLOW: drips only fall while the input has sound (-70 dB shut … -45 dB fully open)
+    const follow = clamp(p.follow, 0, 1);
+    if (follow > 0.001) {
+      const open = clamp((20 * Math.log10(this.lvl + 1e-9) + 70) / 25, 0, 1), keep = 1 - follow * (1 - open);
+      if (keep < 1 && r() >= keep) return;
+    }
     const cluster = (n, gap, size, kind) => { for (let j = 1; j < n; j++) this.pending.push({ at: Math.round(gap * j), size: size * (0.85 - j * 0.08), kind }); };
+    // STEP SEQUENCER: lit steps always drip, as their own pattern, as hard as their accent; unlit steps are silent
+    const sq = this.seq;
+    if (sq && sq.on && sq.steps) {
+      const len = 4 * rate, st = sq.steps[((k % len) + len) % len];
+      if (!st || !st.on) return;
+      const A = 0.25 + clamp(+st.acc || 0, 0, 1);
+      switch (st.pat || p.pattern) {
+        case 'rain': { const s = r(); this.spawn((0.25 + s * s * 0.9) * A, 'rain'); break; }
+        case 'splash': { const n = 2 + ((r() * (2 + dens * 4)) | 0); this.spawn(0.9 * A, 'splash'); cluster(n, spb / 4, 0.75 * A, 'splash'); break; }
+        case 'stream': { this.spawn((0.35 + r() * 0.15) * A, 'stream'); cluster(2 + ((r() * 3) | 0), spb / 3, 0.3 * A, 'stream'); break; }
+        case 'storm': { this.spawn(0.85 * A, 'rain'); cluster(3 + ((r() * 3) | 0), spb / 4, 0.6 * A, 'splash'); break; }
+        case '3d': this.spawn(0.9 * A, 'rain', null, true); break;
+        default: this.spawn(0.85 * A, 'rain');   // even, both
+      }
+      return;
+    }
     switch (p.pattern) {
       case 'even': this.spawn(onBeat ? 0.85 : 0.6 + r() * 0.15, 'rain'); break;
       case 'rain': if (r() < 0.2 + dens * 0.7) { const s = r(); this.spawn(0.25 + s * s * 0.9, 'rain'); } break;
@@ -690,7 +732,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     const mix = clamp(p.mix, 0, 1), dryAmt = mix < 0.5 ? 1 : 2 * (1 - mix), wetAmt = mix < 0.5 ? 2 * mix : 1;
     const chop = clamp(p.chop, 0, 1), sense = clamp(p.sense, 0, 1), drive = clamp(p.drive, 0, 4);
     const kFastA = 1 - Math.exp(-1 / (0.0005 * sr)), kFastR = 1 - Math.exp(-1 / (0.006 * sr));
-    const kSlowA = 1 - Math.exp(-1 / (0.03 * sr)), kSlowR = 1 - Math.exp(-1 / (0.2 * sr));
+    const kSlowA = 1 - Math.exp(-1 / (0.03 * sr)), kSlowR = 1 - Math.exp(-1 / (0.2 * sr)), kLvlR = 1 - Math.exp(-1 / (0.15 * sr));
     const kGateA = 1 - Math.exp(-1 / (0.001 * sr)), kGateR = 1 - Math.exp(-1 / (0.012 * sr));
     const kAtt = 1 / Math.max(1, 0.0008 * sr);
     const fType = p.fType, fOn = fType && fType !== 'off', fRes = clamp(p.fRes, 0, 1), fk = 2 - 1.96 * fRes, fk24 = 2 - 1.6 * fRes, bpGain = Math.pow(fk, 0.7) * 1.4;
@@ -712,6 +754,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
       const a = Math.abs(mono);
       this.fast += (a - this.fast) * (a > this.fast ? kFastA : kFastR);
       this.slow += (a - this.slow) * (a > this.slow ? kSlowA : kSlowR);
+      this.lvl += (a - this.lvl) * (a > this.lvl ? kSlowA : kLvlR);
       if (this.refractory > 0) this.refractory -= 1;
       else if (sense > 0.001 && this.fast > 0.02 && this.fast > this.slow * (1.25 + (1 - sense) * 3.5)) {
         this.spawn(clamp(this.fast * 2.2, 0.3, 1.2), 'note'); this.refractory = 0.06 * sr;
@@ -732,7 +775,8 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
         d.env = natural * Math.min(1, d.aenv);   // inaudible from here: free the voice
         if (d.env > gateNow) gateNow = d.env;
         let fall = Math.exp(-d.age / (fallT * sr * (0.45 + d.size * 0.9)));
-        if (chirp > 0) fall *= Math.pow(fall, chirp);
+        const ch = d.c3 ? 1 : chirp;
+        if (ch > 0) fall *= Math.pow(fall, ch);
         const scatter = d.jit * (0.25 + Math.abs(sweep) * 0.12);
         const swept = d.fc * Math.pow(2, sweep * fall + scatter * (0.45 + 0.55 * fall));
         const wobble = Math.sin(TAU * d.ph) * wob * (0.1 + 0.32 * d.size);
@@ -868,7 +912,8 @@ const Fluidic = (() => {
     { id: 'in.chop', name: 'Chop', label: 'CHOP', eng: 'chop', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true },
     { id: 'rhy.rate', name: 'Rate', eng: 'rate', type: 'enum', options: RATES, def: '4', fxOnly: true },
     { id: 'rhy.bpm', name: 'Tempo', label: 'BPM', eng: 'bpm', min: 60, max: 200, step: 1, def: 120, fmt: (v) => Math.round(v) + '', fxOnly: true },
-    { id: 'rhy.sense', name: 'Hit sense', label: 'SENSE', eng: 'sense', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true }
+    { id: 'rhy.sense', name: 'Hit sense', label: 'SENSE', eng: 'sense', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true },
+    { id: 'in.follow', name: 'Follow', label: 'FOLLOW', eng: 'follow', min: 0, max: 1, def: 1, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true }
   ];
   // the synth's own sound sources and envelope have no meaning in the effect
   // in FLUIDIC FX these start neutral, so the effect sounds as designed until you reach for them
@@ -938,7 +983,7 @@ const Fluidic = (() => {
     'in.drive': [0.7, 1.8], 'in.mix': [0.35, 0.8], 'in.chop': [0, 0.8], 'rhy.sense': [0, 0.6]
   };
   const SAFE_ENUM = { 'rhy.rate': ['2', '4', '4', '8'], 'drip.pattern': ['even', 'rain', 'both', '3d', 'splash', 'stream'], 'filt.type': ['off', 'lp', 'lp', 'lp24', 'lp24', 'hp', 'bp', 'notch'] };
-  const DICE_POOL = PARAMS.map((p) => p.id).filter((id) => id !== 'out.level' && id !== 'drip.edge' && id !== 'rhy.bpm');   // tempo stays yours too
+  const DICE_POOL = PARAMS.map((p) => p.id).filter((id) => id !== 'out.level' && id !== 'drip.edge' && id !== 'rhy.bpm' && id !== 'in.follow');   // tempo and FOLLOW stay yours too
   const DROP_SHAPE = ['drip.ping', 'drip.sweep', 'drip.fall', 'drip.bubble', 'drip.wobble', 'drip.chirp', 'drip.size'];
   const SEC_NAMES = [['exc', 'EXC'], ['drip', 'DRIP'], ['filt', 'FILTER'], ['amp', 'AMP'], ['fx', 'SPACE']];
   const DIE_SHAPES = {
@@ -1002,12 +1047,12 @@ const Fluidic = (() => {
     }
     function persistUi() {
       const st = { preset: current, view: vizView };
-      if (FX) st.auto = autoState();
+      if (FX) { st.auto = autoState(); st.seq = seqData(); }
       if (typeof holdState === 'function' && panelHolds) st.holds = holdState();
       if (plugin) plugin.saveUi(JSON.stringify(st));
       else {
         try {
-          if (FX) localStorage.setItem('fluidic-fx-auto', JSON.stringify(st.auto));
+          if (FX) { localStorage.setItem('fluidic-fx-auto', JSON.stringify(st.auto)); localStorage.setItem('fluidic-fx-seq', JSON.stringify(st.seq)); }
           if (st.holds) localStorage.setItem(FX ? 'fluidic-fx-holds' : 'fluidic-holds', JSON.stringify(st.holds));
         } catch (e) {}
       }
@@ -1042,7 +1087,8 @@ const Fluidic = (() => {
             const now = performance.now();
             (m.events || []).forEach((ev) => spawn(ev, now));
             viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1;
-            if (m.step != null) gridSteps(m.step);
+            if (m.auto) pluginAuto(m.auto, m.rolls);   // FLUIDIC FX: the plugin rolls the dice, even with this window shut
+            if (m.step != null) seqStep(m.step);
           });
         }
         if (startOverlay.isConnected) startOverlay.remove();
@@ -1067,8 +1113,9 @@ const Fluidic = (() => {
         const now = performance.now();
         m.events.forEach((ev) => spawn(ev, now));
         viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1;
-        if (m.step != null) gridSteps(m.step);
+        if (m.step != null) { gridSteps(m.step); seqStep(m.step); }
       };
+      if (FX) node.port.postMessage({ type: 'seq', seq: seqData() });
       // ping-pong delay and reverb sends, then a safety limiter on the output
       const master = ctx.createGain(), dry = ctx.createGain(), dSend = ctx.createGain(), rSend = ctx.createGain();
       const dL = ctx.createDelay(2), dR = ctx.createDelay(2), fb = ctx.createGain(), merge = ctx.createChannelMerger(2), tone = ctx.createBiquadFilter();
@@ -1374,7 +1421,7 @@ const Fluidic = (() => {
       }
       srcNote = el('div', 'srcnote', plugin ? 'THE TRACK THIS IS ON' : 'BUILT-IN BREAK'); pExc.append(srcNote);
       scope(pExc, drawInput, ['rhy.bpm']);
-      const ik = el('div', 'knobs'); ['in.drive', 'in.mix', 'in.chop'].forEach((id) => knob(ik, id)); pExc.append(ik);
+      const ik = el('div', 'knobs'); ['in.drive', 'in.mix', 'in.chop', 'in.follow'].forEach((id) => knob(ik, id)); pExc.append(ik);
       pIn = pExc; pIn.classList.add('inpanel');
     }
     {
@@ -1503,6 +1550,23 @@ const Fluidic = (() => {
       }
       autoBoxes.forEach((b, i) => { b.classList.toggle('on', !!autoMask[i]); b.classList.toggle('here', autoOn && i === autoPos); });
     }
+    // in the plugin, the dice roll inside the plugin (so AUTO ROLL runs with the window closed): show where and what
+    function pluginAuto(a, rolls) {
+      const pos = a.pos == null ? -1 : a.pos;
+      let repaint = pos !== autoPos;
+      autoPos = pos;
+      if (autoMode === 'random' && a.mask && a.mask.length === stepsPerBar()) {
+        const m = a.mask.split('').map((c) => c === '1');
+        if (m.join() !== autoMask.join()) { autoMask = m; repaint = true; }
+      }
+      if (rolls && rolls.length) {
+        const r = rolls[rolls.length - 1];
+        commit();   // the rolled values arrived just before this frame
+        lastRoll = (r.label === 'SET' ? 'set' : r.label) + ' ' + r.n;
+        showMini(r.label, r.n);
+      }
+      if (repaint) paintAuto();
+    }
     // called with the engine's grid-step counter (frames, ~60 per second): handles every step since the last
     function gridSteps(k) {
       if (lastGridStep === null || k < lastGridStep) lastGridStep = k - 1;
@@ -1556,6 +1620,109 @@ const Fluidic = (() => {
       tray.append(ar);
       widgets.push({ id: 'rhy.rate', paint: paintAuto });
       paintAuto();
+    }
+    // STEP SEQUENCER: program where drips fall. Lit steps always drip, each as its own pattern (or the PATTERN dial),
+    // as hard as its accent (drag a step up or down). The grid (1/4 … 1/32) sets how many steps there are.
+    const SEQ_MAX = 32, SEQ_ABBR = { even: 'E', rain: 'R', both: 'B', '3d': '3D', splash: 'SP', stream: 'ST', storm: 'SM' };
+    let seqOn = false, seqBrush = '', seqPos = -1, seqBtn = null, seqGrid = null, seqRow = null, seqCells = [], seqBrushBtns = [];
+    let seqSteps = Array.from({ length: SEQ_MAX }, () => ({ on: false, pat: '', acc: 0.75 }));
+    function seqData() { return { on: seqOn, steps: seqSteps.map((x) => ({ on: !!x.on, pat: x.pat || '', acc: Math.round(x.acc * 100) / 100 })) }; }
+    function setSeqState(q) {
+      if (!q || !FX) return;
+      seqOn = !!q.on;
+      seqSteps = Array.from({ length: SEQ_MAX }, (_, i) => {
+        const x = (q.steps || [])[i] || {};
+        return { on: !!x.on, pat: SEQ_ABBR[x.pat] ? x.pat : '', acc: Math.min(1, Math.max(0, x.acc == null ? 0.75 : +x.acc)) };
+      });
+      seqChanged(true);
+    }
+    function seqChanged(quiet) {
+      paintSeq();
+      if (node && !plugin) node.port.postMessage({ type: 'seq', seq: seqData() });
+      if (!quiet || plugin) persistUi();
+    }
+    function seqStep(k) {
+      if (!seqGrid) return;
+      const len = stepsPerBar(), pos = seqOn ? ((k % len) + len) % len : -1;
+      if (pos !== seqPos) { seqPos = pos; seqCells.forEach((c, i) => c.classList.toggle('here', i === seqPos)); }
+    }
+    function paintSeq() {
+      if (!seqGrid) return;
+      const len = stepsPerBar(), per = len / 4;
+      seqBtn.classList.toggle('on', seqOn); seqBtn.textContent = seqOn ? 'SEQUENCER · ON' : 'SEQUENCER';
+      seqRow.classList.toggle('off', !seqOn);
+      seqBrushBtns.forEach(([k, b]) => b.classList.toggle('on', k === seqBrush));
+      if (seqCells.length !== len) {
+        seqGrid.innerHTML = '';
+        seqCells = Array.from({ length: len }, (_, i) => {
+          const c = el('button', 'seqcell' + (i % per === 0 ? ' beat' : '')); c.type = 'button';
+          c.title = 'Step ' + (i + 1) + ': click to light it (with the pattern brush) or clear it · drag up/down for accent';
+          c.append(el('i'), el('b'));
+          let y0 = 0, dragged = false;
+          const accAt = (e) => { const r = c.getBoundingClientRect(); return Math.min(1, Math.max(0, (r.bottom - e.clientY) / r.height)); };
+          c.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; y0 = e.clientY; dragged = false; c.setPointerCapture(e.pointerId); });
+          c.addEventListener('pointermove', (e) => {
+            if (!c.hasPointerCapture(e.pointerId)) return;
+            if (!dragged && Math.abs(e.clientY - y0) < 4) return;
+            dragged = true; const st = seqSteps[i]; if (!st.on) { st.on = true; st.pat = seqBrush; } st.acc = accAt(e); paintSeq();
+          });
+          c.addEventListener('pointerup', (e) => {
+            if (!c.hasPointerCapture(e.pointerId)) return;
+            c.releasePointerCapture(e.pointerId);
+            const st = seqSteps[i];
+            if (!dragged) {
+              if (st.on && st.pat === seqBrush) st.on = false;   // same brush: clear it
+              else { st.on = true; st.pat = seqBrush; }          // light it, or repaint its pattern
+            }
+            seqChanged();
+          });
+          c.addEventListener('contextmenu', (e) => {   // right-click: cycle this step's pattern
+            e.preventDefault(); const st = seqSteps[i], keys = [''].concat(PATTERNS.map((x) => x[0]));
+            st.pat = keys[(keys.indexOf(st.pat) + 1) % keys.length]; st.on = true; seqChanged();
+          });
+          seqGrid.append(c); return c;
+        });
+        seqGrid.style.gridTemplateColumns = 'repeat(' + len + ', minmax(0, 1fr))';
+        seqPos = -1;
+      }
+      seqCells.forEach((c, i) => {
+        const st = seqSteps[i];
+        c.classList.toggle('on', st.on);
+        c.firstChild.style.height = Math.round((st.on ? st.acc : 0) * 100) + '%';
+        c.lastChild.textContent = st.on ? (SEQ_ABBR[st.pat] || '') : '';
+      });
+    }
+    if (FX) {
+      seqRow = el('div', 'seqrow');
+      seqBtn = el('button', 'autobtn', 'SEQUENCER'); seqBtn.type = 'button';
+      seqBtn.title = 'Program where the drips fall: lit steps drip, unlit steps stay dry';
+      seqBtn.addEventListener('click', () => {
+        seqOn = !seqOn;
+        if (seqOn && !seqSteps.slice(0, stepsPerBar()).some((x) => x.on)) {   // empty: start from the beats
+          const per = stepsPerBar() / 4; seqSteps.forEach((x, i) => { x.on = i % per === 0 && i < stepsPerBar(); x.pat = ''; });
+        }
+        seqChanged();
+      });
+      const side = el('div', 'seqside'), brush = el('div', 'segs mini seqbrush');
+      seqBrushBtns = [['', 'DIAL']].concat(PATTERNS).map(([k, label]) => {
+        const b = el('button', '', label); b.type = 'button';
+        b.title = k ? 'Brush: steps you click drip as ' + label : 'Brush: steps you click follow the PATTERN dial';
+        b.addEventListener('click', () => { seqBrush = k; paintSeq(); }); brush.append(b); return [k, b];
+      });
+      const tools = el('div', 'seqtools');
+      const clr = el('button', 'lock', 'CLEAR'); clr.type = 'button'; clr.title = 'Clear every step';
+      clr.addEventListener('click', () => { seqSteps.forEach((x) => { x.on = false; x.pat = ''; x.acc = 0.75; }); seqChanged(); });
+      const fill = el('button', 'lock', 'BEATS'); fill.type = 'button'; fill.title = 'Light every beat with the brush';
+      fill.addEventListener('click', () => { const len = stepsPerBar(), per = len / 4; seqSteps.forEach((x, i) => { if (i < len && i % per === 0) { x.on = true; x.pat = seqBrush; } }); seqChanged(); });
+      const flat = el('button', 'lock', 'ACCENTS 75'); flat.type = 'button'; flat.title = 'Set every accent back to 75%';
+      flat.addEventListener('click', () => { seqSteps.forEach((x) => { x.acc = 0.75; }); seqChanged(); });
+      tools.append(clr, fill, flat);
+      side.append(brush, tools);
+      seqGrid = el('div', 'seqgrid');
+      seqRow.append(seqBtn, el('small', '', 'BRUSH'), side, seqGrid);
+      tray.append(seqRow);
+      widgets.push({ id: 'rhy.rate', paint: paintSeq });
+      paintSeq();
     }
     function autoState() { return { on: autoOn, die: autoDie, mode: autoMode, mask: autoMode === 'custom' ? autoMask.map((x) => (x ? 1 : 0)).join('') : '', holdRate, holdPattern }; }
     function setAutoState(a) {
@@ -2021,7 +2188,7 @@ const Fluidic = (() => {
     }
     requestAnimationFrame(frame);
 
-    if (!plugin && FX) { try { setAutoState(JSON.parse(localStorage.getItem('fluidic-fx-auto') || 'null')); } catch (e) {} }   // before the preset saves the state
+    if (!plugin && FX) { try { setAutoState(JSON.parse(localStorage.getItem('fluidic-fx-auto') || 'null')); setSeqState(JSON.parse(localStorage.getItem('fluidic-fx-seq') || 'null')); } catch (e) {} }   // before the preset saves the state
     if (!plugin) { try { setHoldState(JSON.parse(localStorage.getItem(FX ? 'fluidic-fx-holds' : 'fluidic-holds') || 'null')); } catch (e) {} }
     if (!plugin) loadPreset(OPEN_ON);   // FLUIDIC opens on the sine pad; FLUIDIC FX on Drippiness
     else {
@@ -2036,6 +2203,7 @@ const Fluidic = (() => {
         fillPresets(); widgets.forEach((w) => w.paint());
         if (ui.auto) setAutoState(ui.auto);
         if (ui.holds) setHoldState(ui.holds);
+        if (ui.seq) setSeqState(ui.seq);
         history = []; hp = -1; commit();
       };
       plugin.on('init', fromHost);
