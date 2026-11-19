@@ -34,25 +34,38 @@
   .meter i b { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--aqua), var(--amber) 70%, var(--red)); }
 
   .viz { position: relative; height: auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #05080b; }
-  .viz canvas { width: 100%; height: 100%; display: block; }
+  .viz canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }   /* drag across the water to play it */
   .viz .hud { position: absolute; left: 14px; top: 10px; font-size: 10px; letter-spacing: .18em; color: #7fb6c1; pointer-events: none; }
   .viz .hud span { color: var(--aqua); }
   .viz .view { position: absolute; right: 10px; top: 8px; display: flex; border: 1px solid #23414a; border-radius: 6px; overflow: hidden; z-index: 2; }
   .viz .view button { background: rgba(5,12,16,.7); color: #6f9aa3; border: 0; font: inherit; font-size: 10px; letter-spacing: .16em; padding: 4px 9px; cursor: pointer; }
   .viz .view button.on { background: #0f3a44; color: var(--aqua); }
+  .viz .view button.water, .viz .view button.full { border-left: 1px solid #23414a; }
+  /* IMMERSIVE: the water fills (nearly) the whole window */
+  .fluidic.immersive > .viz { position: fixed; inset: 10px; z-index: 60; flex: none; height: auto; box-shadow: 0 0 0 100vmax rgba(1,4,6,.94); }
+  .fluidic.immersive > .viz .view { top: 12px; right: 12px; }
+  .fluidic.immersive > .viz .view button { font-size: 11px; padding: 6px 11px; }
+  .fluidic.immersive > .viz .hud { font-size: 11px; }
+  .viz .immhint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); color: #6f9aa3; font-size: 10px; letter-spacing: .16em; pointer-events: none; opacity: 0; transition: opacity .6s; white-space: nowrap; }
+  .fluidic.immersive > .viz .immhint.show { opacity: .8; }
+  .viz.notouch canvas { cursor: default; }
 
   .rack { display: grid; grid-template-columns: 1fr 1.7fr 1fr 1.25fr; gap: 10px; }
   .rack .drip { grid-column: 2 / 5; }
   .rack .filter { grid-column: 1 / 3; }
   .rack .inpanel { grid-column: 1 / 3; }
-  .rack .rhypanel { grid-column: 3 / 5; }
+  .rack .rhypanel { grid-column: 3 / 4; }
+  .rack .flowpanel { grid-column: 1 / -1; }
+  .fx-mode .rack .flowpanel { grid-column: 4 / 5; }
+  .rack .flowpanel .krow:first-of-type { margin-top: auto; }
   .rack .panel.inpanel { display: grid; grid-template-columns: 230px 1fr auto; grid-template-rows: auto auto auto; column-gap: 14px; row-gap: 6px; align-items: center; }
   .rack .panel.inpanel > h3 { grid-column: 1 / -1; }
   .rack .panel.inpanel > .segs { grid-column: 1; grid-row: 2; }
   .rack .panel.inpanel > .srcnote { grid-column: 1; grid-row: 3; }
   .rack .panel.inpanel > .scope { grid-column: 2; grid-row: 2 / 4; height: 52px; min-height: 0; flex: none; }
   .rack .panel.inpanel > .knobs { grid-column: 3; grid-row: 2 / 4; margin-top: 0 !important; }
-  .rack .panel.rhypanel { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; column-gap: 14px; align-items: center; }
+  .rack .panel.rhypanel { display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; row-gap: 6px; align-items: center; }
+  .rack .panel.rhypanel > .knobs { justify-content: space-around; }
   .rack .panel.rhypanel > h3 { grid-column: 1 / -1; }
   .rack .panel.rhypanel > .knobs { margin-top: 0 !important; }
   .panel.bypassed .knobs { opacity: .38; transition: opacity .2s; }
@@ -205,6 +218,18 @@
   .seqcell b { position: absolute; left: 0; right: 0; top: 2px; font: 600 7.5px var(--mono); color: #e9fbfe; letter-spacing: 0; text-align: center; pointer-events: none; text-shadow: 0 0 3px #000; }
   .seqcell.here { box-shadow: 0 0 0 2px var(--amber) inset; }
   .seqrow.off .seqcell.on i { opacity: .35; }
+  .seqcol { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 160px; }
+  .seqcol .seqgrid { min-width: 0; }
+  .seqcol .seqcell { height: 48px; }
+  .seqlane { display: grid; gap: 3px; }
+  .seqdie { height: 17px; border-radius: 4px; border: 1px dashed #2a2f36; background: transparent; color: #8a6a2a; font: 600 8.5px var(--mono); padding: 0; cursor: pointer; }
+  .seqdie.on { border: 1px solid #4a3a1a; background: #22190a; color: var(--amber); }
+  .seqdie.on.cursed { color: var(--curse); border-color: var(--curse); }
+  .seqlane.live .seqdie.on { background: #3a2c12; border-color: var(--amber); }
+  .seqlane.live .seqdie.on.here { background: var(--amber); color: #1a1205; }
+  .seqdicebrush { display: grid; grid-template-columns: repeat(8, max-content); gap: 3px; }
+  .seqdicebrush button { padding: 3px 5px; font-size: 9px; }
+  .seqdicebrush button.cursed.on { background: var(--curse); border-color: var(--curse); }
   .rollmini { position: absolute; right: 12px; bottom: 10px; z-index: 3; pointer-events: none; font: 600 11px var(--mono); color: var(--amber); background: rgba(5,12,16,.8); border: 1px solid #4a3a1a; border-radius: 6px; padding: 4px 8px; opacity: 0; transition: opacity .4s; }
   .rollmini b { color: #e9fbfe; letter-spacing: .1em; margin-right: 4px; }
   .rollmini.pop { opacity: 1; transition: none; }
@@ -271,6 +296,7 @@
    Every drop the engine fires is reported to the page so the visualiser shows exactly what you hear. */
 'use strict';
 const TAU = Math.PI * 2;
+const COLL = [1.5, 2, 1.25];   // COLLIDE: two ripples meeting ring a fifth, an octave or a major third above where they meet
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap01 = (x) => { x -= Math.floor(x); return x < 0 ? x + 1 : x; };
 const MAX_VOICES = 12;
@@ -281,7 +307,8 @@ const DEFAULTS = {
   ping: 0.85, sweep: 2.2, fall: 0.055, bubble: 0.55, wobble: 0.4,
   chirp: 0, width: 0, density: 0.5, size: 0.5, edge: 0,
   fType: 'off', fCut: 2400, fRes: 0.25, fDrive: 0, fKey: 0.5, fEnv: 0, fA: 0.01, fD: 0.6, fRate: 0.15, fDepth: 0,
-  a: 0.004, d: 0.4, s: 0.7, r: 0.5, level: 0.8
+  a: 0.004, d: 0.4, s: 0.7, r: 0.5, level: 0.8,
+  slosh: 0, sway: 0.5, turb: 0, cascade: 0, ripple: 0, collide: 0   // FLOW: the water as one body (0 = off)
 };
 // post-drip filter: a zero-delay-feedback state-variable filter per voice, stereo, with an optional second stage for 24 dB
 function svf(st, o, x, g, k) {
@@ -298,6 +325,8 @@ function makeVoice() {
     ic1: 0, ic2: 0, ic1b: 0, ic2b: 0,
     dripT0: 0, dripWait: 0, dripAge: 1e9, dripHit: 0, dripSize: 0.5, dripJit: 0, dripRatio: 0, dripAmp: 0, dripRate: 1,
     dripPh: 0, dripKick: 0, splashN: 0, stW: 0, spW: 0, dripKind: 1, dGuard: 1, dgLvl: 0,
+    tw: 0, cascW: 0, cascN: 0, cascSize: 0, cascOn: 0,   // FLOW: turbulence walk, the next cascade drip
+    ripT: 0, ripGap: 0, ripAmp: 0, ripN: 0, ripDir: 1, hm: 1,   // RIPPLE train on this voice; hm: pitch × (ripples sink, collisions ring harmonics)
     dripDelay: new Float32Array(32), dripDPos: 0,
     noise: new Float32Array(64), pk: [0, 0, 0],
     fst: new Float64Array(8), fenv: 0, fstage: 0, fg: 0.1,
@@ -312,7 +341,8 @@ class FluidicProcessor extends AudioWorkletProcessor {
     this.voices = Array.from({ length: MAX_VOICES }, makeVoice);
     this.queue = [];
     this.events = [];            // drops fired since the last report
-    this.peak = 0; this.cutFlash = 0; this.lfoPh = 0;
+    this.peak = 0; this.cutFlash = 0; this.lfoPh = 0; this.sloshPh = 0; this.sl = 0;
+    this.tAbs = 0; this.lastPulse = null; this.prevSl = 0; this.prevDs = 0;   // RIPPLE / COLLIDE
     this.reportEvery = Math.round(sampleRate / 60);
     this.stealK = 1 - Math.exp(-1 / (0.0006 * sampleRate));
     this.reportCount = 0;
@@ -340,7 +370,7 @@ class FluidicProcessor extends AudioWorkletProcessor {
 
   startVoice(v, note, vel) {
     const wasIdle = !v.active;
-    Object.assign(v, { active: true, id: note, note, vel, gate: true, age: 0, stage: 'attack', dripKick: 1, dripAge: 1e9, dGuard: 1, dgLvl: 0 });
+    Object.assign(v, { active: true, id: note, note, vel, gate: true, age: 0, stage: 'attack', dripKick: 1, dripAge: 1e9, dGuard: 1, dgLvl: 0, tw: 0, cascW: 0, cascN: 0, cascOn: 0, ripT: 0, hm: 1 });
     v.ic1 = v.ic2 = v.ic1b = v.ic2b = 0;
     v.fenv = 0; v.fstage = 1; if (wasIdle) v.fst.fill(0);
     if (!Number.isFinite(v.fst[0] + v.fst[1] + v.fst[2] + v.fst[3] + v.fst[4] + v.fst[5] + v.fst[6] + v.fst[7])) v.fst.fill(0);
@@ -356,6 +386,45 @@ class FluidicProcessor extends AudioWorkletProcessor {
       if (v.active && v.id === note && v.gate) { v.gate = false; v.stage = 'release'; }
       else if (v.stage === 'steal' && v.pendNote === note) v.pendOff = true;
     });
+  }
+
+  // FLOW at each drip's birth: TURB knocks its timing and pitch about; CASCADE may queue a smaller, higher drip after it
+  flowBirth(v, size, T, C, sr) {
+    v.hm = 1; this.rippleStart(v, size, sr);
+    if (T > 0.001) {
+      v.dripWait *= 1 + (Math.random() * 2 - 1) * T * 0.7; if (v.dripWait < 12) v.dripWait = 12;
+      v.dripJit = clamp(v.dripJit + (Math.random() * 2 - 1) * T * 0.8, -1.8, 1.8);
+    }
+    v.cascN = 0; this.cascadeFrom(v, size, C, sr);
+  }
+  cascadeFrom(v, size, C, sr) {
+    if (C > 0.001 && v.cascN < 5 && size >= 0.1 && Math.random() < C * (0.4 + 0.6 * Math.min(1, size))) {
+      v.cascW = Math.max(24, sr * (0.03 + Math.random() * 0.14) * (1.25 - C * 0.6)); v.cascSize = size * (0.5 + Math.random() * 0.25); v.cascN += 1;
+    }
+  }
+
+  // RIPPLE: a drip sends out a train of soft pulses that re-ring its voice: fast and gentle, then slower, softer, lower, wider
+  rippleStart(v, size, sr) {
+    const R = clamp(this.p.ripple, 0, 1);
+    if (R <= 0.001) return;
+    v.ripGap = sr * (0.028 + Math.random() * 0.012); v.ripT = v.ripGap; v.ripAmp = size * (0.25 + 0.35 * R); v.ripN = 0; v.ripDir = v.dripJit >= 0 ? 1 : -1;
+  }
+  ripPulse(v, vi, sr) {
+    const p = this.p, R = clamp(p.ripple, 0, 1), Cl = clamp(p.collide, 0, 1), W = sr * (0.012 + 0.04 * Cl);
+    v.dripAge = 0; v.dripHit = 3; v.dripSize = v.ripAmp; v.cascOn = 1;
+    v.dripJit = clamp(v.dripJit + v.ripDir * 0.12, -1.8, 1.8); v.hm *= 0.985;
+    this.drop(v, v.dripSize, 'stream');
+    // COLLIDE: meeting another voice's ripple rings that voice at a harmonic of where they meet, and it ripples in turn (smaller)
+    const lp = this.lastPulse;
+    if (Cl > 0.001 && lp && lp.vi !== vi && this.tAbs - lp.time < W && this.voices[lp.vi].active) {
+      const o = this.voices[lp.vi], ratio = COLL[(Math.random() * 3) | 0], a = Math.sqrt(v.ripAmp * lp.amp) * (0.4 + 0.5 * Cl);
+      o.dripAge = 0; o.dripHit = 3; o.dripSize = a; o.cascOn = 1; o.hm = clamp(Math.sqrt(v.hm * lp.hm) * ratio, 0.25, 4);
+      this.drop(o, a, 'splash');
+      if (R > 0.001) { o.ripGap = sr * (0.018 + Math.random() * 0.012); o.ripT = o.ripGap; o.ripAmp = a * 0.7; o.ripN = 0; o.ripDir = -v.ripDir; }
+      this.lastPulse = null;
+    } else this.lastPulse = { time: this.tAbs, vi, amp: v.ripAmp, hm: v.hm };
+    v.ripN += 1; v.ripGap *= 1.28 + 0.1 * (1 - R); v.ripAmp *= 0.55 + 0.25 * R;
+    v.ripT = v.ripAmp < 0.05 || v.ripN >= 12 ? 0 : v.ripGap;
   }
 
   drop(v, size, kind) {          // report a drop to the visualiser (x: 0..1 across the stereo field)
@@ -422,17 +491,36 @@ class FluidicProcessor extends AudioWorkletProcessor {
     const lfoInc = clamp(p.fRate, 0.01, 20) / sr, fDepth = clamp(p.fDepth, 0, 1) * 3, fEnvOct = clamp(p.fEnv, -1, 1) * 5;
     // per-block constants (they only change when a dial moves)
     const ek = (t) => 1 - Math.exp(-1 / (Math.max(0.0008, t) * sr)), ka = ek(p.a), kd = ek(p.d), kr = ek(p.r);
+    // FLOW: SLOSH rocks the whole body at the SWAY rate (pitch and pan lean with it); TURB churns each voice
+    const S = clamp(p.slosh, 0, 1), T = clamp(p.turb, 0, 1), C = clamp(p.cascade, 0, 1);
+    this.sloshPh = wrap01(this.sloshPh + clamp(p.sway, 0.02, 8) * n / sr);
+    const sl = Math.sin(TAU * this.sloshPh) * S; this.sl = sl;
+    {   // the body turning at the end of a sway hits the wall: the voice nearest that side ripples back in
+      const R = clamp(p.ripple, 0, 1), ds = sl - this.prevSl;
+      if (R > 0.001 && S > 0.001 && this.prevDs * ds < 0 && Math.abs(this.prevSl) > 0.25 * S) {
+        const side = this.prevSl > 0 ? 1 : -1;
+        let best = null; for (const v of this.voices) if (v.active && (!best || v.pan * side > best.pan * side)) best = v;
+        if (best) { best.ripGap = sr * 0.03; best.ripT = 1; best.ripAmp = Math.abs(this.prevSl) * 0.45 * R; best.ripN = 0; best.ripDir = -side; }
+      }
+      this.prevDs = ds; this.prevSl = sl;
+    }
     for (const v of this.voices) {
       if (!v.active) continue;
       v.fc = clamp(p.cutoff * Math.pow(2, (v.note - 60) / 12 * p.key), 30, sr * 0.45);
-      const angle = (v.pan * 0.6 + 1) * 0.25 * Math.PI; v.gl = Math.cos(angle); v.gr = Math.sin(angle);
+      if (S > 0.001 || T > 0.001) {
+        if (T > 0.001) v.tw += ((Math.random() * 2 - 1) - v.tw) * 0.15;
+        v.fc = clamp(v.fc * Math.pow(2, sl * 0.45 + v.tw * T * 0.5), 30, sr * 0.45);
+      }
+      const angle = (clamp(v.pan * 0.6 + sl * 0.75, -1, 1) + 1) * 0.25 * Math.PI; v.gl = Math.cos(angle); v.gr = Math.sin(angle);
     }
 
     for (let i = 0; i < n; i++) {
       let busL = 0, busR = 0;
+      this.tAbs += 1;
       this.lfoPh += lfoInc; if (this.lfoPh >= 1) this.lfoPh -= 1;
       const lfo = Math.sin(this.lfoPh * TAU);
-      for (const v of this.voices) {
+      for (let vi = 0; vi < this.voices.length; vi++) {
+        const v = this.voices[vi];
         if (!v.active) continue;
         const env = this.env(v, ka, kd, kr);
         if (!v.active) continue;
@@ -443,6 +531,7 @@ class FluidicProcessor extends AudioWorkletProcessor {
           v.dripKick = 0;
           if (dripMode !== 'even') { v.dripWait = 1; v.splashN = 3 + ((Math.random() * 4) | 0); if (storm) { v.stW = 1 + Math.random() * fallT * sr; v.spW = fallT * sr * (0.5 + Math.random() * 2); v.dripKind = 0.55; } }
           if (dripMode !== 'rain') { v.dripT0 = v.age; v.dripJit = (Math.random() * 2 - 1) * 0.3; this.drop(v, 1, 'note'); }
+          this.flowBirth(v, 1, T, C, sr);
         }
         const dAge = v.age - v.dripT0;
         if (storm && v.gate) {
@@ -463,6 +552,7 @@ class FluidicProcessor extends AudioWorkletProcessor {
             v.dripAmp = Math.random() * 2 - 1; v.dripRate = 0.25 + Math.random() * 0.9;
             v.dripKind = kind === 1 ? 0.55 : kind === 2 ? 0.45 : 0.28;
             this.drop(v, v.dripSize, kind === 1 ? 'rain' : kind === 2 ? 'splash' : 'stream');
+            this.flowBirth(v, v.dripSize, T, C, sr);
           }
         }
         if (dripMode !== 'even' && v.gate && !storm) {
@@ -484,8 +574,20 @@ class FluidicProcessor extends AudioWorkletProcessor {
             v.dripJit = Math.random() * 2 - 1; v.dripRatio = Math.random() * 0.7 - 0.22;
             v.dripAmp = Math.random() * 2 - 1; v.dripRate = 0.25 + Math.random() * 0.9;
             this.drop(v, v.dripSize, dripStyle || 'rain');
+            this.flowBirth(v, v.dripSize, T, C, sr);
           }
         }
+        if (v.cascW > 0) {   // CASCADE: the queued drip falls, smaller and a little higher, and may spill again
+          v.cascW -= 1;
+          if (v.cascW <= 0) {
+            v.cascW = 0; v.dripAge = 0; v.dripHit = 3; v.dripSize = v.cascSize; v.cascOn = 1;
+            v.dripJit = clamp(v.dripJit + 0.25 + Math.random() * 0.35, -1.8, 1.8);
+            this.drop(v, v.dripSize, 'stream');
+            this.cascadeFrom(v, v.dripSize, C, sr);
+            this.rippleStart(v, v.dripSize, sr);
+          }
+        }
+        if (v.ripT > 0) { v.ripT -= 1; if (v.ripT <= 0) this.ripPulse(v, vi, sr); }
         if (v.dripHit > 0) v.dripHit -= 1;
         v.dripAge += 1;
 
@@ -512,14 +614,14 @@ class FluidicProcessor extends AudioWorkletProcessor {
           wobble = Math.sin(TAU * v.dripPh) * wob * 0.28;
           dripRatio = 1.51;
         }
-        const fc = clamp(swept * (1 + wobble), 32, sr * 0.45);
+        const fc = clamp(swept * (1 + wobble) * v.hm, 32, sr * 0.45);
         v.dripPh = wrap01(v.dripPh + (fc * (0.42 + dripRes * 0.5) * (dripMode === 'rain' ? v.dripRate : 1)) / sr);
         const g = Math.tan(Math.PI * fc / sr), k = 1 / dripQ, a1 = 1 / (1 + g * (g + k)), a2 = g * a1, a3 = g * a2;
         const gb = Math.tan(Math.PI * clamp(fc * dripRatio, 40, sr * 0.45) / sr), kb = 1 / Math.max(1.6, dripQ * 0.62);
         const b1 = 1 / (1 + gb * (gb + kb)), b2 = gb * b1, b3 = gb * b2;
         let exc = mix;
         if (dripMode !== 'rain' && dAge < 5 && ping > 0.001) exc += (dAge < 2 ? 0.9 : 0.16) * ping * (storm ? 0.6 : 1);
-        if (dripMode !== 'even' && v.dripHit > 0 && ping > 0.001) exc += (v.dripHit > 1 ? 0.8 : 0.18) * ping * v.dripSize * (storm ? v.dripKind : 1) * v.dGuard;
+        if ((dripMode !== 'even' || v.cascOn) && v.dripHit > 0 && ping > 0.001) exc += (v.dripHit > 1 ? 0.8 : 0.18) * ping * v.dripSize * (storm ? v.dripKind : 1) * v.dGuard;
         const v3 = exc - v.ic2, v1 = a1 * v.ic1 + a2 * v3, v2 = v.ic2 + a2 * v.ic1 + a3 * v3;
         v.ic1 = 2 * v1 - v.ic1; v.ic2 = 2 * v2 - v.ic2;
         if (!Number.isFinite(v.ic1) || v.ic1 > 6 || v.ic1 < -6) { v.ic1 = 0; v.ic2 = 0; }
@@ -578,7 +680,7 @@ class FluidicProcessor extends AudioWorkletProcessor {
     this.peak = Math.max(this.peak * 0.9, peak);
     if (++this.reportCount * n >= this.reportEvery) {
       this.reportCount = 0;
-      this.port.postMessage({ type: 'frame', events: this.events, peak: this.peak, cut: this.cutFlash, voices: this.voices.filter((v) => v.active).length });
+      this.port.postMessage({ type: 'frame', events: this.events, peak: this.peak, cut: this.cutFlash, voices: this.voices.filter((v) => v.active).length, slosh: this.sl });
       this.events = []; this.cutFlash = 0;
     }
     return true;
@@ -600,12 +702,14 @@ const TAU = Math.PI * 2;
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap01 = (x) => { x -= Math.floor(x); return x < 0 ? x + 1 : x; };
 const DROPS = 12;
+const COLL = [1.5, 2, 1.25];   // COLLIDE: two ripples meeting ring a fifth, an octave or a major third above where they meet
 
 const DEFAULTS = {
   pattern: 'even', rate: 4, bpm: 120, density: 0.5, sense: 0,
   cutoff: 900, res: 0.8, ping: 0.6, sweep: 2.2, fall: 0.08, bubble: 0.55, wobble: 0.3,
   chirp: 0, width: 0.4, size: 0.5, edge: 0, key: 1,
   mix: 0.5, chop: 0, drive: 1, follow: 1,
+  slosh: 0, turb: 0, cascade: 0, ripple: 0, collide: 0,  // FLOW: the water as one body (0 = off)
   fType: 'off', fCut: 2400, fRes: 0.25, fDrive: 0, fEnv: 0, fA: 0.005, fD: 0.25, fRate: 0.15, fDepth: 0,
   level: 0.8,
   wave: 'saw', oscLevel: 0, hold: 0, octave: 0,          // EXCITER tone layer (LEVEL 0 = the input only)
@@ -619,7 +723,7 @@ function svf(st, o, x, g, k) {
 }
 const makeDrop = () => ({ active: false, age: 0, size: 0.5, jit: 0, ratio: 0, amp: 0, rate: 1, fc: 900, ph: 0, gl: 0.707, gr: 0.707,
   ic1: 0, ic2: 0, ic1b: 0, ic2b: 0, env: 0, len: 1, dGuard: 1, dgLvl: 0,
-  note: 60, freq: 261.6, oph: 0, noise: new Float32Array(64), aenv: 0, astage: 1, gate: 1 });
+  note: 60, freq: 261.6, oph: 0, noise: new Float32Array(64), aenv: 0, astage: 1, gate: 1, fm: 1, tw: 0, w: 0 });
 
 class FluidicFxProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -632,6 +736,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     this.fst = new Float64Array(8); this.fenv = 0; this.fstage = 0; this.fg = 0.1;
     this.events = []; this.peak = 0; this.cutFlash = 0;
     this.reportEvery = Math.round(sampleRate / 60); this.reportCount = 0;
+    this.rip = []; this.ripId = 0; this.lastPulse = null; this.tAbs = 0; this.prevSl = 0; this.prevDs = 0;   // RIPPLE trains, the last pulse (for COLLIDE)
     this.seq = null;   // STEP SEQUENCER: { on, steps: [{ on, pat ('' = the PATTERN dial), acc 0–1 }] × 32 }
     this.port.onmessage = (e) => this.onMessage(e.data);
   }
@@ -640,15 +745,18 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     if (!m) return;
     if (m.type === 'params') Object.assign(this.p, m.params);
     else if (m.type === 'seq') this.seq = m.seq;
-    else if (m.type === 'sync') { this.clock = 0; this.step = 0; this.pending.length = 0; }   // loop restarted: realign the grid
+    else if (m.type === 'sync') { this.clock = 0; this.step = 0; this.pending.length = 0; this.rip.length = 0; }   // loop restarted: realign the grid
     else if (m.type === 'on') { this.held = this.held.filter((n) => n !== m.note); this.held.push(m.note); this.spawn(0.95, 'note', m.note); }
     else if (m.type === 'off') this.held = this.held.filter((n) => n !== m.note);
-    else if (m.type === 'panic') { this.held = []; this.pending.length = 0; this.drops.forEach((d) => { d.active = false; }); }
+    else if (m.type === 'panic') { this.held = []; this.pending.length = 0; this.rip.length = 0; this.lastPulse = null; this.drops.forEach((d) => { d.active = false; }); }
   }
 
   // a new drip; its pitch follows the held key (if any) else the PITCH dial
-  spawn(size, kind, note, c3) {   // c3: this drip is a 3D one (a sequencer step set to 3D)
-    const p = this.p, sr = sampleRate;
+  spawn(size, kind, note, c3, flow) {   // c3: a 3D drip (sequencer step); flow: a CASCADE drip { gen, up, jit } or a RIPPLE pulse { rp, fm, jit, rg }
+    const p = this.p, sr = sampleRate, T = clamp(p.turb, 0, 1), C = clamp(p.cascade, 0, 1), R = clamp(p.ripple, 0, 1), raw = size;
+    const rp = !!(flow && flow.rp);
+    // TURB: drips on the grid slip off it a little (pushed later, up to ~half a step)
+    if (this.inStep && T > 0.001) { this.pending.push({ at: Math.max(1, Math.round(Math.random() * T * this.spbNow * 0.45)), size, kind, note, c3 }); return; }
     let d = this.drops.find((x) => !x.active);
     if (!d) d = this.drops.reduce((a, b) => (a.env < b.env ? a : b));
     const n = note != null ? note : this.held.length ? this.held[this.held.length - 1] : 60;
@@ -659,6 +767,10 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     d.fc = clamp(p.cutoff * Math.pow(2, (n - 60) / 12 * clamp(p.key, 0, 1)), 30, sr * 0.45);
     let width = clamp(p.width, 0, 1); if ((p.pattern === '3d' || c3) && width < 0.8) width = 0.8;
     d.c3 = c3 ? 1 : 0;
+    if (rp) { d.jit = clamp(flow.jit, -1, 1); d.fc = clamp(d.fc * flow.fm, 30, sr * 0.45); }   // a ripple pulse: where the ripple has spread to, at its pitch
+    else if (flow) { d.jit = clamp(flow.jit + (Math.random() * 2 - 1) * 0.3, -1, 1); d.fc = clamp(d.fc * Math.pow(2, flow.up), 30, sr * 0.45); }   // a cascade: higher, near its parent
+    if (T > 0.001) { d.fc = clamp(d.fc * Math.pow(2, (Math.random() * 2 - 1) * T * 0.5), 30, sr * 0.45); d.jit = clamp(d.jit + (Math.random() * 2 - 1) * T * 0.6, -1, 1); }
+    d.w = width; d.tw = 0; d.fm = 1;
     const angle = (clamp(d.jit * width, -1, 1) + 1) * 0.25 * Math.PI; d.gl = Math.cos(angle); d.gr = Math.sin(angle);
     d.len = clamp(p.fall, 0.02, 0.45) * sr * (1.5 + size * 4);
     // tone layer: this drip's own oscillator, at the drip's note
@@ -669,6 +781,39 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     this.lastNote = n;
     this.fenv = 0; this.fstage = 1;                       // the filter envelope follows the drips
     if (this.events.length < 64) this.events.push({ x: clamp(0.5 + d.jit * width * 0.45, 0.03, 0.97), size, kind, note: n, sweep: p.sweep, chirp: p.chirp });
+    // CASCADE: a drip can spill into a smaller, higher one, which can spill again
+    const gen = flow && !rp ? flow.gen : 0;
+    // RIPPLE: every drip (but not a ripple's own pulses) sends out a train of soft pulses
+    if (R > 0.001 && !rp && this.rip.length < 24) {
+      const gap = sr * (0.028 + Math.random() * 0.012);
+      this.rip.push({ t: gap, gap, amp: raw * (0.25 + 0.35 * R), fm: flow && flow.up ? Math.pow(2, flow.up) : 1, jit: d.jit, dir: d.jit >= 0 ? 1 : -1, n: 0, id: ++this.ripId, gen: 0 });
+    }
+    if (!rp && C > 0.001 && gen < 5 && raw >= 0.1 && Math.random() < C * (0.4 + 0.6 * Math.min(1, raw))) {
+      const at = Math.round(Math.max(24, sr * (0.03 + Math.random() * 0.14) * (1.25 - C * 0.6))), cs = raw * (0.5 + Math.random() * 0.25), up = (flow ? flow.up : 0) + 0.15 + Math.random() * 0.3;
+      this.pending.push({ at, size: cs, kind: 'stream', note: n, flow: { gen: gen + 1, up, jit: d.jit } });
+    }
+  }
+
+  // RIPPLE: each train pulses fast and soft, then slower, softer, a touch lower and further out, until it dies away.
+  // COLLIDE: a pulse that meets another train's pulse rings a harmonic of where they meet, which ripples in turn (always smaller).
+  ripTick(sr) {
+    const p = this.p, R = clamp(p.ripple, 0, 1), Cl = clamp(p.collide, 0, 1), W = sr * (0.012 + 0.04 * Cl);   // how close two ripples must meet
+    for (let j = this.rip.length - 1; j >= 0; j--) {
+      const q = this.rip[j];
+      q.t -= 1; if (q.t > 0) continue;
+      this.spawn(q.amp, 'stream', undefined, false, { rp: 1, fm: q.fm, jit: q.jit });
+      const lp = this.lastPulse;
+      if (Cl > 0.001 && lp && lp.id !== q.id && this.tAbs - lp.time < W && q.gen < 3) {
+        const ratio = COLL[(Math.random() * 3) | 0], a = Math.sqrt(q.amp * lp.amp) * (0.4 + 0.5 * Cl);
+        const fm = Math.sqrt(q.fm * lp.fm) * ratio, jit = (q.jit + lp.jit) * 0.5;
+        this.spawn(a, 'splash', undefined, false, { rp: 1, fm, jit });
+        if (R > 0.001 && this.rip.length < 24) { const gap = sr * (0.018 + Math.random() * 0.012); this.rip.push({ t: gap, gap, amp: a * 0.7, fm, jit, dir: jit >= 0 ? 1 : -1, n: 0, id: ++this.ripId, gen: q.gen + 1 }); }
+        this.lastPulse = null;
+      } else this.lastPulse = { time: this.tAbs, fm: q.fm, amp: q.amp, jit: q.jit, id: q.id };
+      q.n += 1; q.gap *= 1.28 + 0.1 * (1 - R); q.t = q.gap;
+      q.amp *= 0.55 + 0.25 * R; q.fm *= 0.985; q.jit = clamp(q.jit + q.dir * 0.12, -1, 1);
+      if (q.amp < 0.05 || q.n >= 12) this.rip.splice(j, 1);   // (new trains only ever join the end, so j is still this one)
+    }
   }
 
   // one grid step: the pattern decides what falls
@@ -743,13 +888,35 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     const oscLevel = clamp(p.oscLevel, 0, 1), hold = clamp(p.hold, 0, 1), wave = p.wave;
     const keyOct = clamp(p.fKey, 0, 1) * ((this.held.length ? this.held[this.held.length - 1] : this.lastNote) - 60) / 12;
     let peak = 0;
+    // FLOW: SLOSH rocks the whole body, one sway per beat (pitch and pan lean with it); TURB churns each drip
+    const S = clamp(p.slosh, 0, 1), T = clamp(p.turb, 0, 1);
+    this.spbNow = spb;
+    const sl = Math.sin(Math.PI * (this.step + this.clock / spb) / rate) * S; this.sl = sl;
+    {   // the body turning at the end of a sway hits the wall: a ripple runs back in from that side
+      const R = clamp(p.ripple, 0, 1), ds = sl - this.prevSl;
+      if (R > 0.001 && S > 0.001 && this.prevDs * ds < 0 && Math.abs(this.prevSl) > 0.25 * S && this.rip.length < 24) {
+        const side = this.prevSl > 0 ? 1 : -1;
+        this.rip.push({ t: 1, gap: sr * 0.03, amp: Math.abs(this.prevSl) * 0.45 * R, fm: 1, jit: side * 0.9, dir: -side, n: 0, id: ++this.ripId, gen: 1 });
+      }
+      this.prevDs = ds; this.prevSl = sl;
+    }
+    for (const d of this.drops) {
+      if (!d.active) continue;
+      if (S > 0.001 || T > 0.001) {
+        if (T > 0.001) d.tw += ((Math.random() * 2 - 1) - d.tw) * 0.15;
+        d.fm = Math.pow(2, sl * 0.45 + d.tw * T * 0.5);
+        if (S > 0.001) { const angle = (clamp(d.jit * d.w + sl * 0.75, -1, 1) + 1) * 0.25 * Math.PI; d.gl = Math.cos(angle); d.gr = Math.sin(angle); }
+      } else d.fm = 1;
+    }
 
     for (let i = 0; i < n; i++) {
       const xl = inL ? inL[i] : 0, xr = inR ? inR[i] : 0, mono = 0.5 * (xl + xr);
       // tempo grid
       this.clock += 1;
-      if (this.clock >= spb) { this.clock -= spb; this.step += 1; this.onStep(this.step, spb); }
-      for (let j = this.pending.length - 1; j >= 0; j--) { const q = this.pending[j]; if (--q.at <= 0) { this.spawn(q.size, q.kind); this.pending.splice(j, 1); } }
+      if (this.clock >= spb) { this.clock -= spb; this.step += 1; this.inStep = true; this.onStep(this.step, spb); this.inStep = false; }
+      for (let j = this.pending.length - 1; j >= 0; j--) { const q = this.pending[j]; if (--q.at <= 0) { this.pending.splice(j, 1); this.spawn(q.size, q.kind, q.note, q.c3, q.flow); } }
+      this.tAbs += 1;
+      if (this.rip.length) this.ripTick(sr);
       // the input's own hits
       const a = Math.abs(mono);
       this.fast += (a - this.fast) * (a > this.fast ? kFastA : kFastR);
@@ -778,7 +945,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
         const ch = d.c3 ? 1 : chirp;
         if (ch > 0) fall *= Math.pow(fall, ch);
         const scatter = d.jit * (0.25 + Math.abs(sweep) * 0.12);
-        const swept = d.fc * Math.pow(2, sweep * fall + scatter * (0.45 + 0.55 * fall));
+        const swept = d.fc * d.fm * Math.pow(2, sweep * fall + scatter * (0.45 + 0.55 * fall));
         const wobble = Math.sin(TAU * d.ph) * wob * (0.1 + 0.32 * d.size);
         const fc = clamp(swept * (1 + wobble), 32, sr * 0.45);
         d.ph = wrap01(d.ph + fc * (0.42 + dripRes * 0.5) * d.rate / sr);
@@ -842,7 +1009,7 @@ class FluidicFxProcessor extends AudioWorkletProcessor {
     this.peak = Math.max(this.peak * 0.9, peak);
     if (++this.reportCount * n >= this.reportEvery) {
       this.reportCount = 0;
-      this.port.postMessage({ type: 'frame', events: this.events, peak: this.peak, cut: this.cutFlash, voices: this.drops.filter((d) => d.active).length, step: this.step });
+      this.port.postMessage({ type: 'frame', events: this.events, peak: this.peak, cut: this.cutFlash, voices: this.drops.filter((d) => d.active).length, step: this.step, slosh: this.sl });
       this.events = []; this.cutFlash = 0;
     }
     return true;
@@ -913,7 +1080,15 @@ const Fluidic = (() => {
     { id: 'rhy.rate', name: 'Rate', eng: 'rate', type: 'enum', options: RATES, def: '4', fxOnly: true },
     { id: 'rhy.bpm', name: 'Tempo', label: 'BPM', eng: 'bpm', min: 60, max: 200, step: 1, def: 120, fmt: (v) => Math.round(v) + '', fxOnly: true },
     { id: 'rhy.sense', name: 'Hit sense', label: 'SENSE', eng: 'sense', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true },
-    { id: 'in.follow', name: 'Follow', label: 'FOLLOW', eng: 'follow', min: 0, max: 1, def: 1, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true }
+    { id: 'in.follow', name: 'Follow', label: 'FOLLOW', eng: 'follow', min: 0, max: 1, def: 1, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)), fxOnly: true },
+    // FLOW: the water as one body. SLOSH rocks it (drips lean in pitch and pan), TURB churns each drip, CASCADE spills drips into smaller ones
+    { id: 'flow.slosh', name: 'Slosh', label: 'SLOSH', eng: 'slosh', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)) },
+    { id: 'flow.sway', name: 'Slosh sway rate', label: 'SWAY', eng: 'sway', min: 0.05, max: 6, log: true, def: 0.5, fmt: (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + 'Hz', synthOnly: true },
+    { id: 'flow.turb', name: 'Turbulence', label: 'TURB', eng: 'turb', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)) },
+    { id: 'flow.cascade', name: 'Cascade', label: 'CASCADE', eng: 'cascade', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)) },
+    // RIPPLE: each drip sends out soft pulses, fast then slowing as they fade and spread; COLLIDE: ripples that meet ring a harmonic, which ripples again
+    { id: 'flow.ripple', name: 'Ripple', label: 'RIPPLE', eng: 'ripple', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)) },
+    { id: 'flow.collide', name: 'Collide', label: 'COLLIDE', eng: 'collide', min: 0, max: 1, def: 0, fmt: (v) => (v < 0.01 ? 'OFF' : pct(v)) }
   ];
   // the synth's own sound sources and envelope have no meaning in the effect
   // in FLUIDIC FX these start neutral, so the effect sounds as designed until you reach for them
@@ -980,12 +1155,13 @@ const Fluidic = (() => {
     'filt.decay': [0.08, 5], 'filt.key': [0.2, 0.8], 'filt.lfoRate': [0.03, 4], 'filt.lfoDepth': [0, 0.5],
     'amp.a': [0.001, 0.8], 'amp.d': [0.08, 2], 'amp.s': [0.2, 1], 'amp.r': [0.15, 3],
     'fx.delayMix': [0, 0.4], 'fx.delayTime': [0.12, 0.6], 'fx.delayFb': [0.1, 0.6], 'fx.revMix': [0.08, 0.6], 'fx.revSize': [1, 7],
-    'in.drive': [0.7, 1.8], 'in.mix': [0.35, 0.8], 'in.chop': [0, 0.8], 'rhy.sense': [0, 0.6]
+    'in.drive': [0.7, 1.8], 'in.mix': [0.35, 0.8], 'in.chop': [0, 0.8], 'rhy.sense': [0, 0.6],
+    'flow.slosh': [0, 0.6], 'flow.sway': [0.15, 1.5], 'flow.turb': [0, 0.5], 'flow.cascade': [0, 0.6], 'flow.ripple': [0, 0.7], 'flow.collide': [0, 0.7]
   };
   const SAFE_ENUM = { 'rhy.rate': ['2', '4', '4', '8'], 'drip.pattern': ['even', 'rain', 'both', '3d', 'splash', 'stream'], 'filt.type': ['off', 'lp', 'lp', 'lp24', 'lp24', 'hp', 'bp', 'notch'] };
   const DICE_POOL = PARAMS.map((p) => p.id).filter((id) => id !== 'out.level' && id !== 'drip.edge' && id !== 'rhy.bpm' && id !== 'in.follow');   // tempo and FOLLOW stay yours too
   const DROP_SHAPE = ['drip.ping', 'drip.sweep', 'drip.fall', 'drip.bubble', 'drip.wobble', 'drip.chirp', 'drip.size'];
-  const SEC_NAMES = [['exc', 'EXC'], ['drip', 'DRIP'], ['filt', 'FILTER'], ['amp', 'AMP'], ['fx', 'SPACE']];
+  const SEC_NAMES = [['exc', 'EXC'], ['drip', 'DRIP'], ['filt', 'FILTER'], ['amp', 'AMP'], ['fx', 'SPACE'], ['flow', 'FLOW']];
   const DIE_SHAPES = {
     d4: '<polygon points="20,4 37,34 3,34"/><polygon class="in" points="20,4 20,34"/>',
     d6: '<path d="M7 7h26v26H7z"/><path class="in" d="M7 7l6-4h26l-6 4M33 7v26l6-4V3"/>',
@@ -1015,7 +1191,7 @@ const Fluidic = (() => {
     const FX = opts.mode === 'fx';
     const ACTIVE = new Set(PARAMS.filter((p) => (FX ? !p.synthOnly : !p.fxOnly)).map((p) => p.id));
     const POOL = DICE_POOL.filter((id) => ACTIVE.has(id));
-    const SECS = FX ? [['exc', 'EXC'], ['drip', 'DRIP'], ['filt', 'FILTER'], ['amp', 'AMP'], ['fx', 'SPACE'], ['in', 'INPUT'], ['rhy', 'RHYTHM']] : SEC_NAMES;
+    const SECS = FX ? [['exc', 'EXC'], ['drip', 'DRIP'], ['filt', 'FILTER'], ['amp', 'AMP'], ['fx', 'SPACE'], ['flow', 'FLOW'], ['in', 'INPUT'], ['rhy', 'RHYTHM']] : SEC_NAMES;
     const PRE = FX ? PRESETS_FX : PRESETS, OPEN_ON = FX ? 'Drippiness' : 'Sine Meditation';
     if (FX) root.classList.add('fx-mode');
     const keysActive = opts.keysActive || (() => true);
@@ -1046,7 +1222,7 @@ const Fluidic = (() => {
       });
     }
     function persistUi() {
-      const st = { preset: current, view: vizView };
+      const st = { preset: current, view: vizView, water: vizWater, touch: touchOn };
       if (FX) { st.auto = autoState(); st.seq = seqData(); }
       if (typeof holdState === 'function' && panelHolds) st.holds = holdState();
       if (plugin) plugin.saveUi(JSON.stringify(st));
@@ -1086,9 +1262,9 @@ const Fluidic = (() => {
           plugin.on('frame', (m) => {
             const now = performance.now();
             (m.events || []).forEach((ev) => spawn(ev, now));
-            viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1;
+            viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1; viz.slosh = m.slosh || 0;
             if (m.auto) pluginAuto(m.auto, m.rolls);   // FLUIDIC FX: the plugin rolls the dice, even with this window shut
-            if (m.step != null) seqStep(m.step);
+            if (m.step != null) { seqStep(m.step); fluidBeat(m.step); }
           });
         }
         if (startOverlay.isConnected) startOverlay.remove();
@@ -1112,8 +1288,8 @@ const Fluidic = (() => {
         const m = e.data; if (m.type !== 'frame' || node !== me) return;
         const now = performance.now();
         m.events.forEach((ev) => spawn(ev, now));
-        viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1;
-        if (m.step != null) { gridSteps(m.step); seqStep(m.step); }
+        viz.peak = m.peak; viz.voices = m.voices; if (m.cut) viz.cut = 1; viz.slosh = m.slosh || 0;
+        if (m.step != null) { gridSteps(m.step); seqStep(m.step); fluidBeat(m.step); }
       };
       if (FX) node.port.postMessage({ type: 'seq', seq: seqData() });
       // ping-pong delay and reverb sends, then a safety limiter on the output
@@ -1401,7 +1577,35 @@ const Fluidic = (() => {
     let vizView = 'top'; try { vizView = localStorage.getItem('fluidic-view') || 'top'; } catch (e) {}
     const viewBtns = [['side', 'SIDE'], ['top', 'TOP']].map(([v, label]) => { const b = el('button', '', label); b.addEventListener('click', () => { vizView = v; try { localStorage.setItem('fluidic-view', v); } catch (e) {} persistUi(); viewBtns.forEach((x) => x.classList.toggle('on', x.dataset.v === v)); viz.sparks.length = 0; }); b.dataset.v = v; viewSw.append(b); return b; });
     viewBtns.forEach((x) => x.classList.toggle('on', x.dataset.v === vizView));
-    vizBox.append(canvas, hud, viewSw, startOverlay); root.append(vizBox);
+    // WATER: CALM (drawn ripples) or FLUID (a real wave simulation: interference, sloshing, cascades, turbulence)
+    let vizWater = 'calm'; try { vizWater = localStorage.getItem('fluidic-water') || 'calm'; } catch (e) {}
+    const waterBtn = el('button', 'water', 'FLUID'); waterBtn.title = 'FLUID water: ripples interfere, splashes cascade, the water sloshes with the rhythm and churns when it gets loud';
+    const paintWater = () => waterBtn.classList.toggle('on', vizWater === 'fluid');
+    waterBtn.addEventListener('click', () => { vizWater = vizWater === 'fluid' ? 'calm' : 'fluid'; try { localStorage.setItem('fluidic-water', vizWater); } catch (e) {} paintWater(); persistUi(); });
+    viewSw.append(waterBtn); paintWater();
+    // TOUCH: play the water with the mouse or a finger (on by default); FULL: the water fills (nearly) the whole window
+    let touchOn = true; try { touchOn = localStorage.getItem('fluidic-touch') !== 'off'; } catch (e) {}
+    const touchBtn = el('button', 'water', 'TOUCH'); touchBtn.title = 'Play the water: drag across it with the mouse or a finger (click to turn off)';
+    const paintTouch = () => { touchBtn.classList.toggle('on', touchOn); vizBox.classList.toggle('notouch', !touchOn); };
+    touchBtn.addEventListener('click', () => { touchOn = !touchOn; try { localStorage.setItem('fluidic-touch', touchOn ? 'on' : 'off'); } catch (e) {} paintTouch(); persistUi(); });
+    const fullBtn = el('button', 'full', 'FULL'); fullBtn.title = 'Immersive: the water fills the window (Esc or click again to come back)';
+    const immHint = el('div', 'immhint', 'DRAG ACROSS THE WATER TO PLAY · PLAY THE KEYS · ESC TO RETURN');
+    let immersive = false, immTimer = 0;
+    function setImmersive(on) {
+      if (on === immersive) return;
+      immersive = on; root.classList.toggle('immersive', on); fullBtn.classList.toggle('on', on); fullBtn.textContent = on ? 'EXIT' : 'FULL';
+      // a browser page also goes truly full screen; inside a plugin or another page it fills the window
+      if (!plugin && !opts.embedded && document.fullscreenEnabled) {
+        try { if (on && !document.fullscreenElement) root.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement === root) document.exitFullscreen().catch(() => {}); } catch (e) {}
+      }
+      clearTimeout(immTimer); immHint.classList.toggle('show', on && touchOn); if (on) immTimer = setTimeout(() => immHint.classList.remove('show'), 4000);
+      setTimeout(resize, 30);
+    }
+    fullBtn.addEventListener('click', () => setImmersive(!immersive));
+    document.addEventListener('fullscreenchange', () => { if (immersive && document.fullscreenElement !== root && !plugin && !opts.embedded) setImmersive(false); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && immersive) setImmersive(false); });
+    viewSw.append(touchBtn, fullBtn);
+    vizBox.append(canvas, hud, viewSw, immHint, startOverlay); root.append(vizBox); paintTouch();
     const mid = el('div', 'mid'); root.append(mid);   // the only part that scrolls, and only on short windows
     startOverlay.addEventListener('click', async () => { startOverlay.remove(); try { await start(); await ctx.resume(); } catch (e) { hud.textContent = 'AUDIO COULD NOT START: ' + e.message; } });
 
@@ -1463,8 +1667,13 @@ const Fluidic = (() => {
     }
     const pFx = el('section', 'panel'); pFx.dataset.sec = 'fx'; pFx.append(el('h3', '', 'SPACE'));
     krow(pFx, 'DELAY', ['fx.delayMix', 'fx.delayTime', 'fx.delayFb']); const fr2 = krow(pFx, 'VERB · OUT', ['fx.revMix', 'fx.revSize', 'out.level']); fr2.style.marginTop = 'auto';
+    // FLOW: the water as one body
+    const pFlow = el('section', 'panel flowpanel'); pFlow.dataset.sec = 'flow';
+    const flh = el('h3', '', 'FLOW'); flh.append(el('span', '', FX ? 'SWAYS WITH THE BEAT' : 'THE WATER AS ONE BODY')); pFlow.append(flh);
+    if (FX) { krow(pFlow, 'BODY', ['flow.slosh', 'flow.turb', 'flow.cascade']); krow(pFlow, 'RIPPLE', ['flow.ripple', 'flow.collide']); }
+    else krow(pFlow, 'WATER', ['flow.slosh', 'flow.sway', 'flow.turb', 'flow.cascade', 'flow.ripple', 'flow.collide']);
     rack.append(pExc, pDrip, pFilt, pAmp, pFx);
-    if (FX) rack.append(pIn, pRhy);   // the effect's own row: what comes in, and the grid it drops on
+    if (FX) rack.append(pIn, pRhy, pFlow); else rack.append(pFlow);   // the effect's own row: what comes in, and the grid it drops on
     mid.append(rack);
 
     /* ---------------- dice tray ---------------- */
@@ -1499,12 +1708,19 @@ const Fluidic = (() => {
     // roll rhythms, written on a 16-step bar (x = roll) and fitted to whatever grid is playing
     const euclid = (k) => Array.from({ length: 16 }, (_, i) => Math.floor(i * k / 16) !== Math.floor((i - 1) * k / 16) || i === 0);
     const pat16 = (str) => str.split('').map((c) => c === 'x');
+    // STEP SEQUENCER state (its row is built further down). Each step: drip on/off, its pattern, its accent, and its die
+    // for the "Sequencer steps" auto-roll style ('' none, 'auto' the AUTO ROLL die, or a die of its own)
+    const SEQ_MAX = 32, SEQ_ABBR = { even: 'E', rain: 'R', both: 'B', '3d': '3D', splash: 'SP', stream: 'ST', storm: 'SM' };
+    const SEQ_DIE_ABBR = { auto: '•', d4: '4', d6: '6', d8: '8', d12: '12', d20: '20', cursed: '☠', all: 'SET' };
+    let seqOn = false, seqBrush = '', seqDieBrush = 'auto', seqPos = -1, seqBtn = null, seqGrid = null, seqLane = null, seqRow = null;
+    let seqCells = [], seqDies = [], seqBrushBtns = [], seqDieBtns = [];
+    let seqSteps = Array.from({ length: SEQ_MAX }, () => ({ on: false, pat: '', acc: 0.75, die: '' }));
     const AUTO_STYLES = [
       ['STRAIGHT', [['steps', 'Every step · 1 2 3 4 5 6 7 8…'], ['8ths', '8ths · 1 and 2 and…'], ['beats', 'Beats · 1 and and and 2…'], ['half', 'Half-time · 1 and 3'], ['bars', 'Bars · once, on the 1']]],
       ['SYNCOPATED', [['offbeats', 'Off-beats · the "ands"'], ['backbeat', 'Backbeat · 2 and 4'], ['tresillo', 'Tresillo · 3·3·2'], ['clave32', 'Son clave 3-2'], ['clave23', 'Son clave 2-3'],
         ['rumba', 'Rumba clave 3-2'], ['bossa', 'Bossa nova'], ['dotted', 'Dotted 8ths · 3 against 4'], ['gallop', 'Gallop · 1 . a e'],
         ['euclid5', 'Euclid 5 in 16'], ['euclid7', 'Euclid 7 in 16'], ['euclid9', 'Euclid 9 in 16'], ['random', 'Random · new every bar']]],
-      ['YOURS', [['custom', 'Your pattern (click the steps)']]]
+      ['YOURS', [['custom', 'Your pattern (click the steps)'], ['seq', 'Sequencer steps · its dice lane']]]
     ];
     const PAT16 = {
       half: pat16('x.......x.......'), offbeats: pat16('..x...x...x...x.'), backbeat: pat16('....x.......x...'),
@@ -1515,12 +1731,14 @@ const Fluidic = (() => {
     const AUTO_KEYS = AUTO_STYLES.flatMap(([, g]) => g.map(([k]) => k));
     function maskFor(mode, len) {
       const per = len / 4;   // steps per beat
+      if (mode === 'seq') return Array.from({ length: len }, (_, i) => !!(seqSteps[i] && seqSteps[i].die));
       if (mode === 'random') { const m = Array.from({ length: len }, () => Math.random() < 0.35); m[0] = m[0] || !m.some(Boolean); return m; }
       if (PAT16[mode]) { const m = new Array(len).fill(false); PAT16[mode].forEach((on, i) => { if (on) m[Math.floor(i * len / 16)] = true; }); return m; }
       return Array.from({ length: len }, (_, i) => mode === 'steps' ? true : mode === '8ths' ? i % Math.max(1, per / 2) === 0 : mode === 'beats' ? i % per === 0 : i === 0);
     }
     function resizeMask() {
       const len = stepsPerBar();
+      if (autoMode === 'seq') { autoMask = maskFor('seq', len); return; }   // always the sequencer's dice lane
       if (autoMask.length === len) return;
       if (autoMode !== 'custom' || !autoMask.length) { autoMask = maskFor(autoMode === 'custom' ? 'beats' : autoMode, len); return; }
       const old = autoMask, m = new Array(len).fill(false);   // keep your pattern when the grid changes
@@ -1531,6 +1749,7 @@ const Fluidic = (() => {
       if (!autoBtn) return;
       resizeMask();
       autoBtn.classList.toggle('on', autoOn); autoBtn.textContent = autoOn ? 'AUTO ROLL · ON' : 'AUTO ROLL';
+      if (seqLane) seqLane.classList.toggle('live', autoOn && autoMode === 'seq');   // the dice lane lights up when it drives the dice
       autoDieBtns.forEach(([k, b]) => b.classList.toggle('on', k === autoDie));
       if (autoSel) autoSel.value = autoMode;
       if (holdRateBtn) {
@@ -1543,7 +1762,10 @@ const Fluidic = (() => {
         autoGrid.innerHTML = ''; const per = autoMask.length / 4;
         autoBoxes = autoMask.map((_, i) => {
           const b = el('button', 'stepbox' + (i % per === 0 ? ' beat' : '')); b.type = 'button'; b.title = 'Step ' + (i + 1) + ': click to roll here or not';
-          b.addEventListener('click', () => { resizeMask(); autoMask[i] = !autoMask[i]; autoMode = 'custom'; paintAuto(); persistUi(); });
+          b.addEventListener('click', () => {
+            if (autoMode === 'seq') { const st = seqSteps[i]; st.die = st.die ? '' : seqDieBrush; seqChanged(); return; }   // edits the sequencer's dice lane
+            resizeMask(); autoMask[i] = !autoMask[i]; autoMode = 'custom'; paintAuto(); persistUi();
+          });
           autoGrid.append(b); return b;
         });
         autoGrid.style.gridTemplateColumns = 'repeat(' + autoMask.length + ', 1fr)';
@@ -1578,8 +1800,9 @@ const Fluidic = (() => {
         autoPos = ((lastGridStep % autoMask.length) + autoMask.length) % autoMask.length;
         if (autoPos === 0 && autoMode === 'random') autoMask = maskFor('random', autoMask.length);   // a new random bar
         if (autoMask[autoPos]) {
-          const d = DICE.find((x) => x[0] === autoDie);
-          if (autoDie === 'all') rollAll(true); else if (d) roll(d[0], d[1], true);
+          const sd = autoMode === 'seq' ? seqSteps[autoPos].die : '', key = sd && sd !== 'auto' ? sd : autoDie;   // a step's own die
+          const d = DICE.find((x) => x[0] === key);
+          if (key === 'all') rollAll(true); else if (d) roll(d[0], d[1], true);
         }
       }
       if (autoOn) paintAuto();
@@ -1623,28 +1846,25 @@ const Fluidic = (() => {
     }
     // STEP SEQUENCER: program where drips fall. Lit steps always drip, each as its own pattern (or the PATTERN dial),
     // as hard as its accent (drag a step up or down). The grid (1/4 … 1/32) sets how many steps there are.
-    const SEQ_MAX = 32, SEQ_ABBR = { even: 'E', rain: 'R', both: 'B', '3d': '3D', splash: 'SP', stream: 'ST', storm: 'SM' };
-    let seqOn = false, seqBrush = '', seqPos = -1, seqBtn = null, seqGrid = null, seqRow = null, seqCells = [], seqBrushBtns = [];
-    let seqSteps = Array.from({ length: SEQ_MAX }, () => ({ on: false, pat: '', acc: 0.75 }));
-    function seqData() { return { on: seqOn, steps: seqSteps.map((x) => ({ on: !!x.on, pat: x.pat || '', acc: Math.round(x.acc * 100) / 100 })) }; }
+    function seqData() { return { on: seqOn, steps: seqSteps.map((x) => ({ on: !!x.on, pat: x.pat || '', acc: Math.round(x.acc * 100) / 100, die: x.die || '' })) }; }
     function setSeqState(q) {
       if (!q || !FX) return;
       seqOn = !!q.on;
       seqSteps = Array.from({ length: SEQ_MAX }, (_, i) => {
         const x = (q.steps || [])[i] || {};
-        return { on: !!x.on, pat: SEQ_ABBR[x.pat] ? x.pat : '', acc: Math.min(1, Math.max(0, x.acc == null ? 0.75 : +x.acc)) };
+        return { on: !!x.on, pat: SEQ_ABBR[x.pat] ? x.pat : '', acc: Math.min(1, Math.max(0, x.acc == null ? 0.75 : +x.acc)), die: SEQ_DIE_ABBR[x.die] ? x.die : '' };
       });
       seqChanged(true);
     }
     function seqChanged(quiet) {
-      paintSeq();
+      paintSeq(); if (autoMode === 'seq') paintAuto();
       if (node && !plugin) node.port.postMessage({ type: 'seq', seq: seqData() });
       if (!quiet || plugin) persistUi();
     }
     function seqStep(k) {
       if (!seqGrid) return;
       const len = stepsPerBar(), pos = seqOn ? ((k % len) + len) % len : -1;
-      if (pos !== seqPos) { seqPos = pos; seqCells.forEach((c, i) => c.classList.toggle('here', i === seqPos)); }
+      if (pos !== seqPos) { seqPos = pos; seqCells.forEach((c, i) => c.classList.toggle('here', i === seqPos)); seqDies.forEach((d, i) => d.classList.toggle('here', i === seqPos)); }
     }
     function paintSeq() {
       if (!seqGrid) return;
@@ -1664,27 +1884,40 @@ const Fluidic = (() => {
           c.addEventListener('pointermove', (e) => {
             if (!c.hasPointerCapture(e.pointerId)) return;
             if (!dragged && Math.abs(e.clientY - y0) < 4) return;
-            dragged = true; const st = seqSteps[i]; if (!st.on) { st.on = true; st.pat = seqBrush; } st.acc = accAt(e); paintSeq();
+            dragged = true; const st = seqSteps[i]; if (!st.on) { st.on = true; st.pat = seqBrush; if (!st.die) st.die = 'auto'; } st.acc = accAt(e); paintSeq();
           });
           c.addEventListener('pointerup', (e) => {
             if (!c.hasPointerCapture(e.pointerId)) return;
             c.releasePointerCapture(e.pointerId);
             const st = seqSteps[i];
             if (!dragged) {
-              if (st.on && st.pat === seqBrush) st.on = false;   // same brush: clear it
-              else { st.on = true; st.pat = seqBrush; }          // light it, or repaint its pattern
+              if (st.on && st.pat === seqBrush) { st.on = false; if (st.die === 'auto') st.die = ''; }   // same brush: clear it (and its linked die)
+              else { if (!st.on && !st.die) st.die = 'auto'; st.on = true; st.pat = seqBrush; }        // light it (drip + roll), or repaint its pattern
             }
             seqChanged();
           });
           c.addEventListener('contextmenu', (e) => {   // right-click: cycle this step's pattern
             e.preventDefault(); const st = seqSteps[i], keys = [''].concat(PATTERNS.map((x) => x[0]));
-            st.pat = keys[(keys.indexOf(st.pat) + 1) % keys.length]; st.on = true; seqChanged();
+            st.pat = keys[(keys.indexOf(st.pat) + 1) % keys.length]; if (!st.on && !st.die) st.die = 'auto'; st.on = true; seqChanged();
           });
           seqGrid.append(c); return c;
         });
         seqGrid.style.gridTemplateColumns = 'repeat(' + len + ', minmax(0, 1fr))';
+        // the dice lane: which die each step rolls (with AUTO ROLL on "Sequencer steps")
+        seqLane.innerHTML = '';
+        seqDies = Array.from({ length: len }, (_, i) => {
+          const d = el('button', 'seqdie'); d.type = 'button';
+          d.title = 'Step ' + (i + 1) + ' dice: click to give it the DICE brush (click again to remove) · right-click to remove';
+          d.addEventListener('click', () => { const st = seqSteps[i]; st.die = st.die === seqDieBrush ? '' : seqDieBrush; seqChanged(); });
+          d.addEventListener('contextmenu', (e) => { e.preventDefault(); seqSteps[i].die = ''; seqChanged(); });
+          seqLane.append(d); return d;
+        });
+        seqLane.style.gridTemplateColumns = seqGrid.style.gridTemplateColumns;
         seqPos = -1;
       }
+      seqDieBtns.forEach(([k, b]) => b.classList.toggle('on', k === seqDieBrush));
+      seqLane.classList.toggle('live', autoOn && autoMode === 'seq');
+      seqDies.forEach((d, i) => { const k = seqSteps[i].die; d.classList.toggle('on', !!k); d.classList.toggle('cursed', k === 'cursed'); d.textContent = k ? SEQ_DIE_ABBR[k] : ''; });
       seqCells.forEach((c, i) => {
         const st = seqSteps[i];
         c.classList.toggle('on', st.on);
@@ -1699,7 +1932,7 @@ const Fluidic = (() => {
       seqBtn.addEventListener('click', () => {
         seqOn = !seqOn;
         if (seqOn && !seqSteps.slice(0, stepsPerBar()).some((x) => x.on)) {   // empty: start from the beats
-          const per = stepsPerBar() / 4; seqSteps.forEach((x, i) => { x.on = i % per === 0 && i < stepsPerBar(); x.pat = ''; });
+          const per = stepsPerBar() / 4; seqSteps.forEach((x, i) => { x.on = i % per === 0 && i < stepsPerBar(); x.pat = ''; x.die = x.on ? 'auto' : ''; });
         }
         seqChanged();
       });
@@ -1711,15 +1944,25 @@ const Fluidic = (() => {
       });
       const tools = el('div', 'seqtools');
       const clr = el('button', 'lock', 'CLEAR'); clr.type = 'button'; clr.title = 'Clear every step';
-      clr.addEventListener('click', () => { seqSteps.forEach((x) => { x.on = false; x.pat = ''; x.acc = 0.75; }); seqChanged(); });
+      clr.addEventListener('click', () => { seqSteps.forEach((x) => { x.on = false; x.pat = ''; x.acc = 0.75; x.die = ''; }); seqChanged(); });
       const fill = el('button', 'lock', 'BEATS'); fill.type = 'button'; fill.title = 'Light every beat with the brush';
-      fill.addEventListener('click', () => { const len = stepsPerBar(), per = len / 4; seqSteps.forEach((x, i) => { if (i < len && i % per === 0) { x.on = true; x.pat = seqBrush; } }); seqChanged(); });
+      fill.addEventListener('click', () => { const len = stepsPerBar(), per = len / 4; seqSteps.forEach((x, i) => { if (i < len && i % per === 0) { x.on = true; x.pat = seqBrush; if (!x.die) x.die = 'auto'; } }); seqChanged(); });
       const flat = el('button', 'lock', 'ACCENTS 75'); flat.type = 'button'; flat.title = 'Set every accent back to 75%';
       flat.addEventListener('click', () => { seqSteps.forEach((x) => { x.acc = 0.75; }); seqChanged(); });
       tools.append(clr, fill, flat);
-      side.append(brush, tools);
-      seqGrid = el('div', 'seqgrid');
-      seqRow.append(seqBtn, el('small', '', 'BRUSH'), side, seqGrid);
+      // DICE brush: what the dice lane paints (AUTO = the AUTO ROLL die)
+      const dieBrush = el('div', 'segs mini seqdicebrush');
+      seqDieBtns = ['auto'].concat(DICE.map((x) => x[0])).map((k) => {
+        const b = el('button', k === 'cursed' ? 'cursed' : '', k === 'auto' ? 'AUTO' : k === 'all' ? 'SET' : k === 'cursed' ? '☠' : k); b.type = 'button';
+        b.title = k === 'auto' ? 'Dice brush: steps roll the AUTO ROLL die' : 'Dice brush: steps roll ' + (k === 'all' ? 'the whole set' : k === 'cursed' ? 'the cursed d20' : 'the ' + k);
+        b.addEventListener('click', () => { seqDieBrush = k; paintSeq(); }); dieBrush.append(b); return [k, b];
+      });
+      side.append(brush, dieBrush, tools);
+      const col = el('div', 'seqcol');
+      seqGrid = el('div', 'seqgrid'); seqLane = el('div', 'seqlane');
+      seqLane.title = 'Dice lane: with AUTO ROLL on "Sequencer steps", these steps roll their die';
+      col.append(seqGrid, seqLane);
+      seqRow.append(seqBtn, el('small', '', 'BRUSH'), side, col);
       tray.append(seqRow);
       widgets.push({ id: 'rhy.rate', paint: paintSeq });
       paintSeq();
@@ -2077,6 +2320,8 @@ const Fluidic = (() => {
     if (window.ResizeObserver) new ResizeObserver(resize).observe(vizBox);
     const KIND_HUE = { note: 188, rain: 192, splash: 172, stream: 204 };
     function spawn(ev, now) {
+      // a drip you played by touching the water is already drawn under your finger
+      if (ev.kind === 'note' && touchEchoes.length && now - touchEchoes[0] < 600) { touchEchoes.shift(); return; }
       const x = ev.x * W, size = Math.min(1.5, ev.size), hue = (KIND_HUE[ev.kind] || 190) - (ev.note - 60) * 0.6 + ev.chirp * 10;
       const y = H * (0.14 + 0.72 * Math.random());
       viz.drops.push({ x, y, t0: now, size, hue });
@@ -2084,28 +2329,174 @@ const Fluidic = (() => {
       for (let r = 0; r < rings; r++) viz.ripples.push({ x, y, t0: now + 40 + r * 110, size, hue, speed: 40 + 70 * (1.1 - Math.min(1, size)) + ev.sweep * 8 });
       const sparks = Math.round(2 + size * 7 + (ev.kind === 'splash' ? 4 : 0));
       for (let s = 0; s < sparks; s++) viz.sparks.push({ x, y: 0, ox: x, oy: y, ang: Math.random() * Math.PI * 2, dist: 10 + Math.random() * (14 + size * 34), vx: (Math.random() - 0.5) * (40 + size * 120), vy: -(60 + Math.random() * 160 * (0.4 + size)), t0: now + 40, hue, r: 0.8 + Math.random() * 1.6 * size });
+      fluidDrip(x, y, size, ev.kind, now);
       if (viz.ripples.length > 260) viz.ripples.splice(0, viz.ripples.length - 260);
       if (viz.sparks.length > 600) viz.sparks.splice(0, viz.sparks.length - 600);
       if (viz.drops.length > 120) viz.drops.splice(0, viz.drops.length - 120);
     }
 
+    /* ---- FLUID water: a height-field wave simulation (2-D from above, 1-D from the side) ----
+       Every drip pushes the surface down; the waves spread, reflect off the edges and interfere.
+       Splash droplets fall back in (cascades), the whole body sloshes with the drips and the beat,
+       and the surface churns with the level (turbulence). */
+    const fl = { s: 4, gw: 0, gh: 0, a: null, b: null, img: null, off: null, octx: null,   // 2-D field
+      line: null, lineP: null, n: 0,                                                       // 1-D field (side view)
+      slosh: 0, sloshV: 0, beat: -1, acc: 0 };
+    function fluidSize() {
+      const s = Math.max(3, Math.ceil(Math.max(W, H) / 230)), gw = Math.ceil(W / s) + 2, gh = Math.ceil(H / s) + 2;
+      if (gw !== fl.gw || gh !== fl.gh || s !== fl.s) {
+        fl.s = s; fl.gw = gw; fl.gh = gh; fl.a = new Float32Array(gw * gh); fl.b = new Float32Array(gw * gh); fl.v = new Float32Array(gw * gh);
+        fl.off = document.createElement('canvas'); fl.off.width = gw; fl.off.height = gh; fl.octx = fl.off.getContext('2d'); fl.img = fl.octx.createImageData(gw, gh);
+      }
+      const n = Math.max(32, Math.ceil(W / 3));
+      if (n !== fl.n) { fl.n = n; fl.line = new Float32Array(n + 2); fl.lineP = new Float32Array(n + 2); }   // lineP: the surface's velocity
+    }
+    function fluidPoke(x, y, amp, rad) {   // a round push into the 2-D field (x, y in pixels)
+      if (!fl.a) return;
+      const cx = x / fl.s + 1, cy = y / fl.s + 1, r = Math.max(1, rad), r2 = r * r;
+      for (let j = Math.max(1, (cy - r) | 0); j <= Math.min(fl.gh - 2, (cy + r) | 0); j++)
+        for (let i = Math.max(1, (cx - r) | 0); i <= Math.min(fl.gw - 2, (cx + r) | 0); i++) {
+          const d2 = (i - cx) * (i - cx) + (j - cy) * (j - cy); if (d2 > r2) continue;
+          fl.a[j * fl.gw + i] -= amp * (0.5 + 0.5 * Math.cos(Math.PI * Math.sqrt(d2) / r));
+        }
+    }
+    function linePoke(x, amp, rad) {       // a push into the 1-D surface (x in pixels)
+      if (!fl.line) return;
+      const c = x / W * fl.n + 1, r = Math.max(1, rad);
+      for (let i = Math.max(1, (c - r) | 0); i <= Math.min(fl.n, (c + r) | 0); i++) fl.line[i] += amp * (0.5 + 0.5 * Math.cos(Math.PI * Math.min(1, Math.abs(i - c) / r)));
+    }
+    function fluidDrip(x, y, size, kind, now) {
+      if (vizWater !== 'fluid') return;
+      fluidSize();
+      const amp = 90 + size * 260;
+      fluidPoke(x, y, amp, 1.2 + size * 2.4); linePoke(x, 1.2 + size * 3.2, 3 + size * 5);
+      fl.sloshV += (x / W - 0.5) * (0.4 + size) * 1.6;   // the body rocks away from where it was hit
+      if (kind === 'splash' || size > 0.9) fl.acc += size;
+    }
+    function fluidBeat(k) {   // the grid's downbeats rock the water: sloshing in time
+      if (vizWater !== 'fluid' || k === fl.beat) return;
+      fl.beat = k; const per = Math.max(1, stepsPerBar() / 4);
+      if (k % per === 0) fl.sloshV += ((k / per) % 2 ? 1 : -1) * (0.9 + Math.min(1.5, viz.peak) * 0.9);
+    }
+    function fluidStep(dt) {
+      fluidSize();
+      // sloshing: one damped spring for the whole body
+      // tuned to the tempo (one sway per beat) so the beat's pushes build it up, in time
+      const bps = FX ? Math.max(0.5, Math.min(4, (values['rhy.bpm'] || 120) / 60)) : 1, w = Math.PI * bps;
+      fl.sloshV += -fl.slosh * w * w * dt - fl.sloshV * 1.6 * dt; fl.slosh += fl.sloshV * dt;
+      if (Math.abs(values['flow.slosh'] || 0) > 0.01) fl.sloshV += ((viz.slosh || 0) * 1.4 - fl.slosh) * 10 * dt;   // FLOW's SLOSH: the water sways with the sound
+      fl.slosh = Math.max(-1.6, Math.min(1.6, fl.slosh));
+      // turbulence: the louder it is, the more the surface churns
+      const churn = Math.min(1, viz.peak / 1.6) + Math.min(1, fl.acc) * 0.5; fl.acc *= Math.exp(-dt * 3);
+      if (Math.random() < churn * 2.2 * dt) {   // now and then a swirl of broad, soft pushes
+        const cx = Math.random() * W, cy = Math.random() * H;
+        for (let q = 0; q < 3; q++) fluidPoke(cx + (Math.random() - 0.5) * 60, cy + (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 40 * churn, 3 + Math.random() * 3);
+        linePoke(cx, (Math.random() - 0.5) * 0.8 * churn, 6);
+      }
+      const steps = Math.min(4, Math.max(1, Math.round(dt * 90)));
+      for (let n = 0; n < steps; n++) {
+        // 2-D wave equation, 9-point Laplacian (round ripples), velocity form, lightly damped
+        const { gw, gh } = fl, h = fl.a, v = fl.v;
+        for (let j = 1; j < gh - 1; j++) {
+          for (let i = j * gw + 1, e = j * gw + gw - 1; i < e; i++) {
+            const lap = (h[i - 1] + h[i + 1] + h[i - gw] + h[i + gw]) * 0.2 + (h[i - gw - 1] + h[i - gw + 1] + h[i + gw - 1] + h[i + gw + 1]) * 0.05 - h[i];
+            v[i] = (v[i] + lap * 0.42) * 0.992;
+          }
+        }
+        for (let i = 0; i < h.length; i++) h[i] = (h[i] + v[i]) * 0.9995;
+        // 1-D: the side view's surface, same scheme
+        const L = fl.line, P = fl.lineP, N = fl.n;
+        L[0] = L[1]; L[N + 1] = L[N];
+        for (let i = 1; i <= N; i++) P[i] = (P[i] + (L[i - 1] + L[i + 1] - 2 * L[i]) * 0.3) * 0.988;
+        for (let i = 1; i <= N; i++) L[i] = (L[i] + P[i]) * 0.999;
+      }
+      if (!Number.isFinite(fl.a[(fl.gh >> 1) * fl.gw + (fl.gw >> 1)]) || !Number.isFinite(fl.line[fl.n >> 1])) { fl.a.fill(0); fl.v.fill(0); fl.line.fill(0); fl.lineP.fill(0); }
+    }
+    function hslRgb(h, s, l) { s /= 100; l /= 100; const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0) * 255, f(8) * 255, f(4) * 255]; }
+    function drawTopFluid(now, dt, glowHue, heat) {
+      fluidStep(dt);
+      const { gw, gh } = fl, h = fl.a, px = fl.img.data;
+      const deep = hslRgb(glowHue, 60, 6 + heat * 6), mid = hslRgb(glowHue, 65, 20 + heat * 10), hi = hslRgb(glowHue, 90, 82);
+      const sl = fl.slosh * 22;
+      for (let j = 1; j < gh - 1; j++) {
+        for (let i = 1; i < gw - 1; i++) {
+          const k = j * gw + i;
+          // light from the upper left: slope of the surface, plus the slosh rocking the whole sheet
+          const sx = h[k - 1] - h[k + 1], sy = h[k - gw] - h[k + gw];
+          const lit = (sx + sy) * 0.012 + sl * Math.cos(Math.PI * i / gw) * 0.02;
+          // caustics: where the surface curves, light gathers
+          const lap = Math.abs(h[k - 1] + h[k + 1] + h[k - gw] + h[k + gw] - 4 * h[k]) * 0.006;
+          const t = Math.max(0, Math.min(1, 0.32 + lit)), c = Math.min(1, lap * lap * 0.9 + Math.max(0, lit - 0.25) * 1.4);
+          const o = k * 4;
+          px[o] = deep[0] + (mid[0] - deep[0]) * t + (hi[0] - mid[0]) * c;
+          px[o + 1] = deep[1] + (mid[1] - deep[1]) * t + (hi[1] - mid[1]) * c;
+          px[o + 2] = deep[2] + (mid[2] - deep[2]) * t + (hi[2] - mid[2]) * c;
+          px[o + 3] = 255;
+        }
+      }
+      fl.octx.putImageData(fl.img, 0, 0);
+      g.imageSmoothingEnabled = true; g.drawImage(fl.off, 1, 1, gw - 2, gh - 2, 0, 0, (gw - 2) * fl.s, (gh - 2) * fl.s);
+    }
+    /* ---- touch the water: drag a mouse or finger across it to play ----
+       Left to right is low to high (a pentatonic scale over three octaves); faster strokes drip harder.
+       Each drip is a short note through the same path as the keys, so the plugin plays it too. */
+    const TOUCH_SCALE = [0, 3, 5, 7, 10], touchEchoes = [];
+    let touchLast = null;
+    function touchDrip(px, py, speed) {
+      if (!node) return;
+      const xn = Math.min(0.999, Math.max(0, px / W)), idx = Math.floor(xn * 15);
+      const note = 48 + 12 * Math.floor(idx / 5) + TOUCH_SCALE[idx % 5];
+      const vel = Math.min(0.8, 0.22 + speed * 0.0005);
+      const now = performance.now(), size = 0.35 + vel * 0.8, hue = 188 - (note - 60) * 0.6;
+      // drawn right here, at once
+      viz.drops.push({ x: px, y: py, t0: now, size, hue });
+      for (let r = 0; r < 2; r++) viz.ripples.push({ x: px, y: py, t0: now + 40 + r * 110, size, hue, speed: 55 });
+      for (let k = 0; k < 6; k++) viz.sparks.push({ x: px, y: 0, ox: px, oy: py, ang: Math.random() * Math.PI * 2, dist: 10 + Math.random() * 30, vx: (Math.random() - 0.5) * 120, vy: -(60 + Math.random() * 140), t0: now + 40, hue, r: 0.8 + Math.random() * 1.4 * size });
+      fluidDrip(px, py, size * 0.55, 'note', now);
+      touchEchoes.push(now); if (touchEchoes.length > 16) touchEchoes.shift();
+      if (held.has(note)) return;   // you're holding that key: just the ripple
+      node.port.postMessage({ type: 'on', note, vel });
+      setTimeout(() => { if (node && !held.has(note)) node.port.postMessage({ type: 'off', note }); }, 110);
+    }
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.button > 0 || !touchOn) return;
+      const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+      canvas.setPointerCapture(e.pointerId);
+      touchLast = { x: px, y: py, t: performance.now(), dx: px, dy: py };
+      touchDrip(px, py, 300);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!touchLast || !canvas.hasPointerCapture(e.pointerId)) return;
+      const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top, t = performance.now();
+      const d = Math.hypot(px - touchLast.dx, py - touchLast.dy), dt = Math.max(1, t - touchLast.t);
+      const speed = Math.hypot(px - touchLast.x, py - touchLast.y) / dt * 1000;   // px per second
+      touchLast.x = px; touchLast.y = py; touchLast.t = t;
+      if (d >= 42 || (d >= 14 && t - (touchLast.lastDrip || 0) > 140)) { touchLast.dx = px; touchLast.dy = py; touchLast.lastDrip = t; touchDrip(px, py, speed); }
+    });
+    const touchEnd = (e) => { touchLast = null; try { canvas.releasePointerCapture(e.pointerId); } catch (x) {} };
+    canvas.addEventListener('pointerup', touchEnd); canvas.addEventListener('pointercancel', touchEnd);
+
     // overhead view: looking straight down on the water
     function drawTop(now, dt) {
       const heat = Math.min(1, Math.max(0, (viz.peak - 0.8) / 2.2));
       const glowHue = 188 - heat * 160;
+      const fluid = vizWater === 'fluid';
+      if (fluid) drawTopFluid(now, dt, glowHue, heat);
+      else {
       const bg = g.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.75);
       bg.addColorStop(0, `hsl(${glowHue},55%,${9 + heat * 8}%)`); bg.addColorStop(1, '#02070a');
       g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      }
       // slow caustic shimmer on the surface
       g.lineWidth = 1;
-      for (let i = 0; i < 7; i++) {
+      if (!fluid) for (let i = 0; i < 7; i++) {
         g.beginPath();
         for (let x = 0; x <= W; x += 10) { const yy = H * (i + 0.5) / 7 + Math.sin(x * 0.011 + idle * 0.6 + i) * 9 + Math.sin(x * 0.027 - idle * 0.4 + i * 2) * 4; x === 0 ? g.moveTo(x, yy) : g.lineTo(x, yy); }
         g.strokeStyle = `hsla(${glowHue},70%,55%,${0.05 + heat * 0.05})`; g.stroke();
       }
       // ripples: full circles spreading out from each impact
       viz.ripples = viz.ripples.filter((r) => (now - r.t0) / 1000 < 1.8);
-      for (const r of viz.ripples) {
+      if (!fluid) for (const r of viz.ripples) {
         const age = (now - r.t0) / 1000; if (age < 0) continue;
         const rad = 3 + age * r.speed * (1 + r.size) * 0.62, a = Math.max(0, 1 - age / 1.5) * (0.35 + 0.5 * Math.min(1, r.size));
         g.beginPath(); g.arc(r.x, r.y, rad, 0, Math.PI * 2);
@@ -2123,7 +2514,11 @@ const Fluidic = (() => {
         g.beginPath(); g.arc(d.x, d.y, r0 * (1 - age * 0.7), 0, Math.PI * 2); g.fillStyle = `hsla(${d.hue},90%,92%,${1 - age})`; g.fill();
       }
       // splash droplets thrown outwards, landing in a ring
-      viz.sparks = viz.sparks.filter((s) => now < s.t0 || now - s.t0 < 600);
+      viz.sparks = viz.sparks.filter((s) => {
+        const alive = now < s.t0 || now - s.t0 < 600;
+        if (!alive && fluid) fluidPoke(s.ox + Math.cos(s.ang) * s.dist, s.oy + Math.sin(s.ang) * s.dist, 22 + s.r * 26, 1);   // cascade: it lands and ripples
+        return alive;
+      });
       for (const s of viz.sparks) {
         if (now < s.t0) continue;
         const t = (now - s.t0) / 600, d = s.dist * (1 - (1 - t) * (1 - t));
@@ -2145,19 +2540,39 @@ const Fluidic = (() => {
       const glowHue = 188 - heat * 160;
       // water body
       const water = g.createLinearGradient(0, surf, 0, H); water.addColorStop(0, `hsla(${glowHue},70%,${18 + heat * 10}%,0.55)`); water.addColorStop(1, 'rgba(2,10,14,0.9)');
-      g.fillStyle = water; g.fillRect(0, surf, W, H - surf);
-      // surface line, disturbed by live ripples
+      g.fillStyle = water; if (vizWater !== 'fluid') g.fillRect(0, surf, W, H - surf);
+      // surface line, disturbed by live ripples (or, FLUID, the simulated surface rocking as a body)
+      const fluid = vizWater === 'fluid';
+      if (fluid) fluidStep(dt);
+      const surfAt = (x) => {
+        const c = x / W * fl.n + 1, i = Math.max(1, Math.min(fl.n, c | 0)), f = c - (c | 0), L = fl.line;
+        return surf + (L[i] * (1 - f) + L[Math.min(fl.n, i + 1)] * f) * 3.2 + fl.slosh * (x / W - 0.5) * 34 + Math.cos(Math.PI * 2 * x / W) * fl.sloshV * 2.5
+          + Math.sin(x * 0.012 + idle * 1.3) * 1.2;
+      };
+      if (fluid) {   // the water body follows the moving surface
+        g.beginPath(); g.moveTo(0, H);
+        for (let x = 0; x <= W; x += 4) g.lineTo(x, surfAt(x));
+        g.lineTo(W, H); g.closePath();
+        const wb = g.createLinearGradient(0, surf - 40, 0, H); wb.addColorStop(0, `hsla(${glowHue},75%,${24 + heat * 10}%,0.7)`); wb.addColorStop(1, 'rgba(2,10,14,0.95)');
+        g.fillStyle = wb; g.fill();
+        // light bands under the surface, bent by its slope
+        for (let k = 1; k <= 3; k++) {
+          g.beginPath();
+          for (let x = 0; x <= W; x += 8) { const y = surfAt(x) + k * 14 + (surfAt(x + 8) - surfAt(x)) * k * 0.8; x === 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
+          g.strokeStyle = `hsla(${glowHue},80%,65%,${0.12 / k})`; g.lineWidth = 1; g.stroke();
+        }
+      }
       g.beginPath();
-      for (let x = 0; x <= W; x += 6) {
-        let y = surf + Math.sin(x * 0.012 + idle * 1.3) * 1.2 + Math.sin(x * 0.031 - idle * 0.9) * 0.6;
-        for (const r of viz.ripples) { const age = (now - r.t0) / 1000; if (age < 0 || age > 1.6) continue; const rad = age * r.speed * (1 + r.size); const d = Math.abs(x - r.x) - rad; if (Math.abs(d) < 18) y += Math.cos(d / 18 * Math.PI) * 3.2 * r.size * (1 - age / 1.6); }
+      for (let x = 0; x <= W; x += fluid ? 4 : 6) {
+        let y = fluid ? surfAt(x) : surf + Math.sin(x * 0.012 + idle * 1.3) * 1.2 + Math.sin(x * 0.031 - idle * 0.9) * 0.6;
+        if (!fluid) for (const r of viz.ripples) { const age = (now - r.t0) / 1000; if (age < 0 || age > 1.6) continue; const rad = age * r.speed * (1 + r.size); const d = Math.abs(x - r.x) - rad; if (Math.abs(d) < 18) y += Math.cos(d / 18 * Math.PI) * 3.2 * r.size * (1 - age / 1.6); }
         x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
       g.strokeStyle = `hsla(${glowHue},85%,${62 + heat * 8}%,${0.55 + heat * 0.35})`; g.lineWidth = 1.4 + heat * 1.6;
       g.shadowColor = `hsla(${glowHue},90%,60%,${0.4 + heat * 0.5})`; g.shadowBlur = 8 + heat * 22; g.stroke(); g.shadowBlur = 0;
       // ripples: perspective rings on the surface
       viz.ripples = viz.ripples.filter((r) => (now - r.t0) / 1000 < 1.8);
-      for (const r of viz.ripples) {
+      if (!fluid) for (const r of viz.ripples) {
         const age = (now - r.t0) / 1000; if (age < 0) continue;
         const rad = age * r.speed * (1 + r.size), a = Math.max(0, 1 - age / 1.8) * (0.35 + 0.5 * Math.min(1, r.size));
         g.beginPath(); g.ellipse(r.x, surf + 3, rad, rad * 0.2, 0, 0, Math.PI * 2);
@@ -2166,17 +2581,22 @@ const Fluidic = (() => {
       // falling streaks: each drop is drawn landing as it sounds
       viz.drops = viz.drops.filter((d) => now - d.t0 < 260);
       for (const d of viz.drops) {
-        const age = (now - d.t0) / 260, len = 30 + d.size * 70, top = surf - len * (1 - age * 0.6);
-        const grad = g.createLinearGradient(0, top, 0, surf); grad.addColorStop(0, `hsla(${d.hue},90%,80%,0)`); grad.addColorStop(1, `hsla(${d.hue},90%,85%,${0.9 * (1 - age)})`);
-        g.strokeStyle = grad; g.lineWidth = 1.2 + d.size * 2.4; g.beginPath(); g.moveTo(d.x, top); g.lineTo(d.x, surf); g.stroke();
-        g.beginPath(); g.arc(d.x, surf - 2, (2 + d.size * 4) * (1 - age), 0, Math.PI * 2); g.fillStyle = `hsla(${d.hue},90%,88%,${1 - age})`; g.fill();
+        const sy = fluid ? surfAt(d.x) : surf;
+        const age = (now - d.t0) / 260, len = 30 + d.size * 70, top = sy - len * (1 - age * 0.6);
+        const grad = g.createLinearGradient(0, top, 0, sy); grad.addColorStop(0, `hsla(${d.hue},90%,80%,0)`); grad.addColorStop(1, `hsla(${d.hue},90%,85%,${0.9 * (1 - age)})`);
+        g.strokeStyle = grad; g.lineWidth = 1.2 + d.size * 2.4; g.beginPath(); g.moveTo(d.x, top); g.lineTo(d.x, sy); g.stroke();
+        g.beginPath(); g.arc(d.x, sy - 2, (2 + d.size * 4) * (1 - age), 0, Math.PI * 2); g.fillStyle = `hsla(${d.hue},90%,88%,${1 - age})`; g.fill();
       }
       // splash sparks: little droplets thrown up that fall back in
-      viz.sparks = viz.sparks.filter((s) => s.y <= 4 || now < s.t0);
+      viz.sparks = viz.sparks.filter((s) => {
+        const alive = s.y <= 4 || now < s.t0;
+        if (!alive && fluid) linePoke(s.x, 0.25 + s.r * 0.3, 2.5);   // cascade: droplets fall back and ripple the surface
+        return alive;
+      });
       for (const s of viz.sparks) {
         if (now < s.t0) continue;
         s.vy += 520 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
-        g.beginPath(); g.arc(s.x, surf + s.y, s.r, 0, Math.PI * 2); g.fillStyle = `hsla(${s.hue},90%,80%,0.85)`; g.fill();
+        g.beginPath(); g.arc(s.x, (fluid ? surfAt(s.x) : surf) + s.y, s.r, 0, Math.PI * 2); g.fillStyle = `hsla(${s.hue},90%,80%,0.85)`; g.fill();
       }
       }
       // emergency cut: a brief red flash
@@ -2200,6 +2620,8 @@ const Fluidic = (() => {
         hostVals = Object.assign({}, values);
         current = (ui.preset === 'f:Break Drips' ? 'f:Drippiness' : ui.preset) || 'f:' + OPEN_ON;   // renamed preset in older projects
         if (ui.view === 'side' || ui.view === 'top') { vizView = ui.view; viewBtns.forEach((x) => x.classList.toggle('on', x.dataset.v === vizView)); }
+        if (ui.water === 'fluid' || ui.water === 'calm') { vizWater = ui.water; paintWater(); }
+        if (typeof ui.touch === 'boolean') { touchOn = ui.touch; paintTouch(); }
         fillPresets(); widgets.forEach((w) => w.paint());
         if (ui.auto) setAutoState(ui.auto);
         if (ui.holds) setHoldState(ui.holds);
